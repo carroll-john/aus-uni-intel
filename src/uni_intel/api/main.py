@@ -15,8 +15,14 @@ app = FastAPI(title="Australian University Intelligence API")
 
 TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation"
 LEGACY_TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations"
+OVERSEAS_FEE_INCOME_METRIC_ID = "finance_international_students"
+LEGACY_OVERSEAS_FEE_INCOME_METRIC_ID = "finance_fee_paying_overseas_students"
 METRIC_HISTORY_ALIASES = {
     TOTAL_REVENUE_METRIC_ID: [TOTAL_REVENUE_METRIC_ID, LEGACY_TOTAL_REVENUE_METRIC_ID],
+    OVERSEAS_FEE_INCOME_METRIC_ID: [
+        OVERSEAS_FEE_INCOME_METRIC_ID,
+        LEGACY_OVERSEAS_FEE_INCOME_METRIC_ID,
+    ],
 }
 
 

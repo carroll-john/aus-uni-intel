@@ -89,7 +89,7 @@ CURATED_METRIC_CATALOG: list[CatalogMetric] = [
     unavailable("surplus_before_da_finance_costs_pct", "Surplus before D&A and finance costs %", "Finance and funding", "calculated_needed", "Requires surplus before D&A and finance costs divided by revenue."),
     available("cgs_other_grants", "Commonwealth Grants Scheme + other grants $", "Finance and funding", "finance_commonwealth_grants_scheme_and_other_grants", "Total Institution", "Department provider finance tables."),
     available("hecs_help_revenue", "HECS-HELP revenue (Govt + upfront) $", "Finance and funding", "finance_hecs_help_australian_government_payments_total", "Total Institution", "Department provider finance tables."),
-    available("overseas_fee_income", "Overseas student fee income $", "Finance and funding", "finance_fee_paying_overseas_students", "Total Institution", "Department provider finance tables."),
+    available("overseas_fee_income", "Overseas student fee income $", "Finance and funding", "finance_international_students", "Total Institution", "Department provider finance tables."),
     unavailable("international_fee_share", "International fee share of revenue %", "Finance and funding", "calculated_needed", "Requires overseas student fee income divided by total revenue."),
     available("australian_government_assistance", "Australian Government assistance $", "Revenue lines", "finance_australian_government_financial_assistance", "Total Institution", "Department provider finance tables."),
     unavailable("government_assistance_real_2024", "Government assistance (real 2024 $) $", "Revenue lines", "missing", "Requires CPI deflator or real-dollar source."),
