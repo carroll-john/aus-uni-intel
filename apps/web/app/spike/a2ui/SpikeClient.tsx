@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { MessageProcessor } from "@a2ui/web_core/v0_9";
 import { A2uiSurface } from "@a2ui/react/v0_9";
 import { uniIntelCatalog } from "@/lib/spike/a2ui-catalog";
@@ -56,26 +56,31 @@ export function SpikeClient() {
   const [logs, setLogs] = useState<ComposeLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [hasSurface, setHasSurface] = useState(false);
 
   const processor = useMemo(() => new MessageProcessor([uniIntelCatalog]), []);
   const [surfaces, setSurfaces] = useState(() => Array.from(processor.model.surfacesMap.values()));
 
+  const syncSurfaces = useCallback(() => {
+    setSurfaces(Array.from(processor.model.surfacesMap.values()));
+  }, [processor]);
+
   useEffect(() => {
-    const sync = () => setSurfaces(Array.from(processor.model.surfacesMap.values()));
-    const createdSub = processor.onSurfaceCreated(sync);
-    const deletedSub = processor.onSurfaceDeleted(sync);
+    const createdSub = processor.onSurfaceCreated(syncSurfaces);
+    const deletedSub = processor.onSurfaceDeleted(syncSurfaces);
     return () => {
       createdSub.unsubscribe();
       deletedSub.unsubscribe();
     };
-  }, [processor]);
+  }, [processor, syncSurfaces]);
 
   const submitIntent = useCallback(
     async (intent: string) => {
       if (!intent.trim()) return;
       setLoading(true);
       setError(null);
+      setRenderError(null);
       const nextMessages: ChatMessage[] = [...messages, { role: "user", content: intent.trim() }];
       setMessages(nextMessages);
       setInput("");
@@ -93,7 +98,13 @@ export function SpikeClient() {
         });
         if (!response.ok) throw new Error(`Compose failed (${response.status})`);
         const payload = (await response.json()) as ComposeResponse;
-        processor.processMessages(payload.messages);
+        try {
+          processor.processMessages(payload.messages);
+          syncSurfaces();
+        } catch (renderFailure) {
+          const message = renderFailure instanceof Error ? renderFailure.message : "A2UI render failed";
+          setRenderError(message);
+        }
         setPriorSelection(payload.selection);
         setHasSurface(true);
         setLogs((current) => [...current, payload.log]);
@@ -109,11 +120,15 @@ export function SpikeClient() {
         setLoading(false);
       }
     },
-    [hasSurface, messages, priorSelection, processor]
+    [hasSurface, messages, priorSelection, processor, syncSurfaces]
   );
 
   return (
     <div className="space-y-6">
+      <section className="rounded-md border border-line bg-white px-4 py-3 text-sm text-muted">
+        Open this page in <strong className="text-ink">Safari or Chrome</strong> if Cursor&apos;s built-in preview shows
+        &quot;Can&apos;t connect to server&quot; after compose. Keep the terminal running <code className="text-xs">npm run dev</code>.
+      </section>
       <section className="panel space-y-3 p-4">
         <label className="block text-sm font-medium text-ink" htmlFor="intent">
           Describe the insights and view you want
@@ -145,6 +160,7 @@ export function SpikeClient() {
         />
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {renderError ? <p className="text-sm text-red-600">Render error: {renderError}</p> : null}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -155,7 +171,11 @@ export function SpikeClient() {
               Submit a request to generate a composition.
             </div>
           ) : (
-            surfaces.map((surface) => <A2uiSurface key={surface.id} surface={surface} />)
+            surfaces.map((surface) => (
+              <RenderErrorBoundary key={surface.id}>
+                <A2uiSurface surface={surface} />
+              </RenderErrorBoundary>
+            ))
           )}
         </div>
 
@@ -163,6 +183,25 @@ export function SpikeClient() {
       </section>
     </div>
   );
+}
+
+class RenderErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null as string | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error: error.message };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          A2UI failed to render this surface: {this.state.error}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function SamplePrompts({
