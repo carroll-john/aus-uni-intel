@@ -99,7 +99,12 @@ export function SpikeClient() {
         setLogs((current) => [...current, payload.log]);
         setMessages((current) => [...current, { role: "assistant", content: payload.selection.rationale }]);
       } catch (submitError) {
-        setError(submitError instanceof Error ? submitError.message : "Unknown error");
+        const message = submitError instanceof Error ? submitError.message : "Unknown error";
+        setError(
+          message.includes("Failed to fetch") || message.includes("NetworkError")
+            ? "Could not reach the dev server. Start it with: cd apps/web && npm run dev"
+            : message
+        );
       } finally {
         setLoading(false);
       }

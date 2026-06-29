@@ -15,8 +15,7 @@ import type { FactRow } from "@/lib/api";
 import { RankingBarChart, TrendLineChart } from "@/components/ChartPanels";
 import { formatValue } from "@/lib/format";
 import type { ChartPayload, MetricCardPayload } from "./types";
-
-export const uniIntelCatalogId = "https://uni-intel.local/spike/catalog/v1.json";
+import { uniIntelCatalogId } from "./constants";
 
 type BinderlessContext = Parameters<Parameters<typeof createBinderlessComponentImplementation>[1]>[0];
 

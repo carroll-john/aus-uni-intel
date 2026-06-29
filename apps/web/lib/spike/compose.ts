@@ -1,5 +1,5 @@
+import { DEFAULT_SURFACE_ID, uniIntelCatalogId } from "./constants";
 import { fetchInsightData } from "./spike-api";
-import { uniIntelCatalogId } from "./a2ui-catalog";
 import type {
   AgentSelection,
   A2UIMessage,
@@ -11,7 +11,7 @@ import type {
   SelectedInsight
 } from "./types";
 
-export const DEFAULT_SURFACE_ID = "spike-insights";
+export { DEFAULT_SURFACE_ID };
 
 function chartComponent(chart: SelectedInsight["chart"]) {
   switch (chart) {
