@@ -85,7 +85,7 @@ export default async function SectorOverviewPage({
         {Object.entries(grouped).map(([metric, rows]) => (
           <div className="panel min-w-0 p-4" key={metric}>
             <h2 className="mb-3 text-base font-semibold">{metric}</h2>
-            <RankingTable rows={rows} />
+            <RankingTable rows={rows} showMetric={false} />
           </div>
         ))}
       </section>

@@ -72,7 +72,7 @@ export default async function ProviderProfilePage({
             <h2 className="text-base font-semibold">Top providers by {selectedFact.metric_name.toLowerCase()}</h2>
             <span className="text-xs text-muted">{selectedFact.reporting_year} · {selectedFact.dimension_scope}</span>
           </div>
-          <RankingTable rows={peerRankings} />
+          <RankingTable rows={peerRankings} showMetric={false} />
         </div>
       </section>
 

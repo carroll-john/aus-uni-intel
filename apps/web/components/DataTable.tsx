@@ -2,15 +2,15 @@ import Link from "next/link";
 import type { FactRow } from "@/lib/api";
 import { formatValue } from "@/lib/format";
 
-export function RankingTable({ rows }: { rows: FactRow[] }) {
+export function RankingTable({ rows, showMetric = true }: { rows: FactRow[]; showMetric?: boolean }) {
   return (
     <div className="overflow-x-auto rounded-md border border-line">
-      <table className="min-w-[640px] w-full border-collapse text-left text-sm">
+      <table className={`${showMetric ? "min-w-[640px]" : "min-w-[420px]"} w-full border-collapse text-left text-sm`}>
         <thead className="bg-slate-50 text-xs uppercase text-muted">
           <tr>
             <th className="px-3 py-2">Rank</th>
             <th className="px-3 py-2">Provider</th>
-            <th className="px-3 py-2">Metric</th>
+            {showMetric ? <th className="px-3 py-2">Metric</th> : null}
             <th className="px-3 py-2 text-right">Value</th>
           </tr>
         </thead>
@@ -27,7 +27,7 @@ export function RankingTable({ rows }: { rows: FactRow[] }) {
                   row.provider_name
                 )}
               </td>
-              <td className="px-3 py-2 text-muted">{row.metric_name}</td>
+              {showMetric ? <td className="px-3 py-2 text-muted">{row.metric_name}</td> : null}
               <td className="px-3 py-2 text-right tabular-nums">{formatValue(row.value, row.unit)}</td>
             </tr>
           ))}
