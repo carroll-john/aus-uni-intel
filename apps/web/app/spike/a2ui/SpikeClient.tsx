@@ -7,6 +7,48 @@ import { uniIntelCatalog } from "@/lib/spike/a2ui-catalog";
 import { DEFAULT_SURFACE_ID } from "@/lib/spike/compose";
 import type { AgentSelection, ChatMessage, ComposeLogEntry, ComposeResponse } from "@/lib/spike/types";
 
+const STARTER_PROMPTS = [
+  {
+    label: "Finance + research",
+    prompt: "Show total revenue ranked by provider and HERDC research income over time"
+  },
+  {
+    label: "Postgraduate demand",
+    prompt: "How are postgraduate enrolments and commencing postgraduate enrolments tracking over time?"
+  },
+  {
+    label: "International income",
+    prompt: "Rank providers by overseas student fee income for 2024"
+  },
+  {
+    label: "Student experience",
+    prompt: "Show QILT overall experience and teaching quality ranked by provider"
+  },
+  {
+    label: "Peer benchmarks",
+    prompt: "Show operating margin broken down by mission group"
+  }
+] as const;
+
+const REFINEMENT_PROMPTS = [
+  {
+    label: "Add student experience",
+    prompt: "Now add QILT overall experience ranked by provider"
+  },
+  {
+    label: "Split by mission group",
+    prompt: "Split the view by mission group instead of individual providers"
+  },
+  {
+    label: "Add research load",
+    prompt: "Also include postgraduate research load over time"
+  },
+  {
+    label: "Unavailable metric (demo)",
+    prompt: "Show retention rate by partner"
+  }
+] as const;
+
 export function SpikeClient() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -87,15 +129,16 @@ export function SpikeClient() {
           >
             {loading ? "Composing…" : hasSurface ? "Refine view" : "Compose view"}
           </button>
-          <button
-            className="rounded-md border border-line px-4 py-2 text-sm font-medium text-muted"
-            disabled={loading}
-            onClick={() => submitIntent("Show total revenue ranked by provider and postgraduate enrolments over time")}
-            type="button"
-          >
-            Try example
-          </button>
         </div>
+
+        <SamplePrompts
+          disabled={loading}
+          onSelect={(prompt) => setInput(prompt)}
+          onSubmit={submitIntent}
+          prompts={hasSurface ? REFINEMENT_PROMPTS : STARTER_PROMPTS}
+          title={hasSurface ? "Try a refinement" : "Sample prompts"}
+        />
+
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </section>
 
@@ -113,6 +156,51 @@ export function SpikeClient() {
 
         <InspectorLog logs={logs} />
       </section>
+    </div>
+  );
+}
+
+function SamplePrompts({
+  title,
+  prompts,
+  disabled,
+  onSelect,
+  onSubmit
+}: {
+  title: string;
+  prompts: ReadonlyArray<{ label: string; prompt: string }>;
+  disabled: boolean;
+  onSelect: (prompt: string) => void;
+  onSubmit: (prompt: string) => void;
+}) {
+  return (
+    <div className="space-y-2 border-t border-line pt-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {prompts.map((sample) => (
+          <div className="flex overflow-hidden rounded-md border border-line text-xs" key={sample.label}>
+            <button
+              className="px-3 py-1.5 font-medium text-ink hover:bg-slate-50 disabled:opacity-60"
+              disabled={disabled}
+              onClick={() => onSelect(sample.prompt)}
+              title={sample.prompt}
+              type="button"
+            >
+              {sample.label}
+            </button>
+            <button
+              className="border-l border-line bg-slate-50 px-2 py-1.5 text-teal hover:bg-teal/10 disabled:opacity-60"
+              disabled={disabled}
+              onClick={() => onSubmit(sample.prompt)}
+              title={`Run: ${sample.prompt}`}
+              type="button"
+            >
+              Run
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-muted">Click a label to load it into the box, or Run to compose immediately.</p>
     </div>
   );
 }
