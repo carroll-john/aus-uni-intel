@@ -9,7 +9,7 @@ FINANCE_SOURCE_TABLE = "Annual provider finance tables"
 STUDENT_SOURCE_DATASET = "Selected Higher Education Statistics Student Data"
 HERDC_SOURCE_DATASET = "Research and Development Income Time Series 1992-2024"
 QILT_SOURCE_AGENCY = "QILT"
-QILT_SOURCE_DATASET = "2024 Student Experience Survey National Report Tables"
+QILT_SOURCE_DATASET = "Student Experience Survey National Report Tables"
 
 
 def slugify(value: str) -> str:

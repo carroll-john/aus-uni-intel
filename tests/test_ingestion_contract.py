@@ -1,10 +1,13 @@
 from pathlib import Path
+from shutil import copyfile
+from zipfile import ZipFile
 
 import duckdb
 from openpyxl import Workbook
 
 from uni_intel.ingestion.ingest_finance import ingest_finance
 from uni_intel.ingestion import ingest_student as ingest_student_module
+from uni_intel.ingestion import ingest_qilt as ingest_qilt_module
 from uni_intel.ingestion.common import upsert_metrics
 from uni_intel.ingestion.metrics import CALCULATED_METRICS
 from uni_intel.ingestion.metrics import STUDENT_METRICS
@@ -114,6 +117,44 @@ def test_student_section_ingestion_is_idempotent_and_purges_summary_facts(
         conn.close()
 
 
+def test_qilt_ingestion_loads_configured_history_idempotently(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "qilt_source.zip"
+    workbook_path = tmp_path / "national.xlsx"
+    _write_qilt_history_workbook(workbook_path)
+    with ZipFile(source, "w") as archive:
+        archive.write(workbook_path, "2021 SES National Report Tables.xlsx")
+
+    db_path = tmp_path / "test.duckdb"
+    monkeypatch.setattr(ingest_qilt_module, "RAW_DIR", tmp_path / "raw")
+    monkeypatch.setattr(ingest_qilt_module, "QILT_SES_URLS", {2021: "local://qilt-2021.zip"})
+    monkeypatch.setattr(ingest_qilt_module, "download_file", _copy_qilt_source(source))
+
+    ingest_qilt_module.ingest_qilt(db_path)
+    ingest_qilt_module.ingest_qilt(db_path)
+
+    conn = duckdb.connect(str(db_path))
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM stg_qilt_rows").fetchone()[0] == 12
+        assert conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0] == 12
+        assert conn.execute("SELECT DISTINCT reporting_year FROM facts").fetchone()[0] == 2021
+        assert conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM facts
+            WHERE metric_id LIKE 'qilt%'
+              AND source_file_id IS NOT NULL
+              AND source_row_number IS NOT NULL
+              AND source_line_item IS NOT NULL
+              AND dimensions_json IS NOT NULL
+            """
+        ).fetchone()[0] == 12
+    finally:
+        conn.close()
+
+
 def test_calculated_metrics_store_methods() -> None:
     assert CALCULATED_METRICS
     for metric in CALCULATED_METRICS:
@@ -135,6 +176,48 @@ def _write_student_section_workbook(path: Path) -> None:
     worksheet.append(["NSW", "The University of Sydney", 10, 100])
     worksheet.append(["NSW", "Total NSW", 10, 100])
     workbook.save(path)
+
+
+def _write_qilt_history_workbook(path: Path) -> None:
+    workbook = Workbook()
+    default = workbook.active
+    workbook.remove(default)
+    headers = [
+        "",
+        "",
+        "Skills Development",
+        "Learner Engagement",
+        "Teaching Quality",
+        "Student Support",
+        "Learning Resources",
+        "Quality of entire educational experience",
+    ]
+    values = [
+        "",
+        "The University of Sydney",
+        "80.1 (79.0, 81.2)",
+        "60.2 (59.0, 61.4)",
+        "78.3 (77.1, 79.5)",
+        "75.4 (74.1, 76.7)",
+        "82.5 (81.2, 83.8)",
+        "70.6 (69.4, 71.8)",
+    ]
+    for sheet_name in ["FOCUS_UG_UNI_1Y_INST_CI", "FOCUS_PGC_UNI_1Y_INST_CI"]:
+        sheet = workbook.create_sheet(sheet_name)
+        sheet.append(["Student experience"])
+        sheet.append(["Back to INDEX"])
+        sheet.append(["", "", "", "", "", "", "", ""])
+        sheet.append(headers)
+        sheet.append(values)
+    workbook.save(path)
+
+
+def _copy_qilt_source(source: Path):
+    def copy_source(_url: str, destination: Path, force: bool = False) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        copyfile(source, destination)
+
+    return copy_source
 
 
 def _insert_old_student_summary_fact(db_path: Path) -> None:

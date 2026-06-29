@@ -113,4 +113,19 @@ QILT_SES_2024_URL = (
     "https://qilt.edu.au/docs/default-source/default-document-library/"
     "ses_2024_national_report_tables.zip?sfvrsn=f1ce2f6e_1"
 )
+QILT_SES_URLS = {
+    2021: (
+        "https://www.qilt.edu.au/docs/default-source/default-document-library/"
+        "2021-ses-report-tables.zip?sfvrsn=55a50ad6_5"
+    ),
+    2022: (
+        "https://www.qilt.edu.au/docs/default-source/default-document-library/"
+        "ses_2022_report_tables.zip?sfvrsn=5b058ac1_1"
+    ),
+    2023: (
+        "https://www.qilt.edu.au/docs/default-source/default-document-library/"
+        "2023-ses-national-tables.zip?sfvrsn=edae06fd_2"
+    ),
+    2024: QILT_SES_2024_URL,
+}
 QILT_SES_PUBLICATION_URL = "https://qilt.edu.au/surveys/student-experience-survey-%28ses%29"

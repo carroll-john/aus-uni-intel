@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from uni_intel.config import DB_PATH, QILT_SES_2024_URL, QILT_SES_PUBLICATION_URL, RAW_DIR
+from uni_intel.config import DB_PATH, QILT_SES_PUBLICATION_URL, QILT_SES_URLS, RAW_DIR
 from uni_intel.db import connect, init_schema
 from uni_intel.ingestion.common import (
     QualityCheck,
@@ -29,83 +29,103 @@ from uni_intel.ingestion.provider_matching import ProviderResolver
 from uni_intel.seed import seed_providers
 
 
-DATASET_ID = "qilt_ses_2024"
+DATASET_ID_PREFIX = "qilt_ses"
 SOURCE_LICENSE = "QILT public report tables"
 METRIC_LINE_ITEMS = {str(metric["metric_id"]): str(metric["source_line_item"]) for metric in QILT_METRICS}
 
 
 def ingest_qilt(db_path: Path = DB_PATH, force_download: bool = False) -> dict[str, object]:
-    raw_path = RAW_DIR / "qilt" / "2024" / "ses_2024_national_report_tables.zip"
-    download_file(QILT_SES_2024_URL, raw_path, force=force_download)
-    rows = QiltSesParser().parse(raw_path)
-    checksum = sha256_file(raw_path)
-    source_id = source_file_id(DATASET_ID, checksum)
     run_id = new_run_id()
+    year_results: list[dict[str, object]] = []
+    all_checks: list[QualityCheck] = []
+    source_ids: list[str] = []
 
     conn = connect(db_path)
     try:
         init_schema(conn)
         seed_providers(conn)
-        upsert_source_dataset(
-            conn,
-            SourceDataset(
-                DATASET_ID,
-                QILT_SOURCE_DATASET,
-                QILT_SOURCE_AGENCY,
-                QILT_SES_PUBLICATION_URL,
-                "QILT Student Experience Survey provider-level report tables.",
-            ),
-        )
-        upsert_source_file(
-            conn,
-            SourceFileMetadata(
-                source_id,
-                DATASET_ID,
-                "2024 Student Experience Survey National Report Tables",
-                QILT_SES_2024_URL,
-                raw_path,
-                "zip",
-                2024,
-                checksum,
-                len(rows),
-                SOURCE_LICENSE,
-                "2025",
-                "QILT SES ZIP containing ODS and XLSX report tables; ODS contains parseable cells.",
-            ),
-        )
         upsert_metrics(conn, QILT_METRICS)
         resolver = ProviderResolver.from_connection(conn)
-        staging_rows, facts_loaded, unmatched = _load_rows(conn, rows, source_id, run_id, resolver)
-        checks = _quality_checks(len(rows), staging_rows, facts_loaded, unmatched)
-        checks.extend(metadata_quality_checks(conn))
-        persist_quality_checks(conn, run_id, source_id, checks)
+
+        for year, url in sorted(QILT_SES_URLS.items()):
+            dataset_id = f"{DATASET_ID_PREFIX}_{year}"
+            raw_path = RAW_DIR / "qilt" / str(year) / _raw_filename(year, url)
+            download_file(url, raw_path, force=force_download)
+            rows = QiltSesParser(reporting_year=year).parse(raw_path)
+            checksum = sha256_file(raw_path)
+            source_id = source_file_id(dataset_id, checksum)
+            source_ids.append(source_id)
+
+            upsert_source_dataset(
+                conn,
+                SourceDataset(
+                    dataset_id,
+                    f"{year} {QILT_SOURCE_DATASET}",
+                    QILT_SOURCE_AGENCY,
+                    QILT_SES_PUBLICATION_URL,
+                    "QILT Student Experience Survey provider-level report tables.",
+                ),
+            )
+            upsert_source_file(
+                conn,
+                SourceFileMetadata(
+                    source_id,
+                    dataset_id,
+                    f"{year} Student Experience Survey National Report Tables",
+                    url,
+                    raw_path,
+                    raw_path.suffix.lower().lstrip("."),
+                    year,
+                    checksum,
+                    len(rows),
+                    SOURCE_LICENSE,
+                    str(year + 1),
+                    "QILT SES national report tables containing provider-level undergraduate and postgraduate coursework tables.",
+                ),
+            )
+            staging_rows, facts_loaded, unmatched = _load_rows(conn, rows, source_id, run_id, resolver)
+            checks = _quality_checks(year, len(rows), staging_rows, facts_loaded, unmatched)
+            persist_quality_checks(conn, run_id, source_id, checks)
+            all_checks.extend(checks)
+            year_results.append(
+                {
+                    "reporting_year": year,
+                    "source_file_id": source_id,
+                    "source_url": url,
+                    "raw_path": str(raw_path),
+                    "rows_parsed": len(rows),
+                    "staging_rows_loaded": staging_rows,
+                    "facts_loaded": facts_loaded,
+                    "unmatched_provider_names": unmatched,
+                }
+            )
+
+        metadata_checks = metadata_quality_checks(conn)
+        persist_quality_checks(conn, run_id, None, metadata_checks)
+        all_checks.extend(metadata_checks)
     finally:
         conn.close()
 
     report = write_quality_report(
-        "qilt_ses_2024",
+        "qilt_ses",
         run_id,
-        source_id,
+        None,
         {
             "source_dataset": QILT_SOURCE_DATASET,
-            "source_url": QILT_SES_2024_URL,
-            "raw_path": str(raw_path),
-            "rows_parsed": len(rows),
-            "staging_rows_loaded": staging_rows,
-            "facts_loaded": facts_loaded,
-            "unmatched_provider_names": unmatched,
+            "source_years": sorted(QILT_SES_URLS),
+            "source_file_ids": source_ids,
+            "year_results": year_results,
         },
-        checks,
+        all_checks,
     )
     return {
         "run_id": run_id,
-        "source_file_id": source_id,
-        "raw_path": str(raw_path),
+        "source_file_ids": source_ids,
         "quality_report": str(report),
-        "rows_parsed": len(rows),
-        "staging_rows_loaded": staging_rows,
-        "facts_loaded": facts_loaded,
-        "unmatched_provider_names": unmatched,
+        "year_results": year_results,
+        "rows_parsed": sum(int(result["rows_parsed"]) for result in year_results),
+        "staging_rows_loaded": sum(int(result["staging_rows_loaded"]) for result in year_results),
+        "facts_loaded": sum(int(result["facts_loaded"]) for result in year_results),
     }
 
 
@@ -203,12 +223,17 @@ def _load_rows(
     return len(staging_rows), len(fact_rows), sorted(unmatched)
 
 
-def _quality_checks(rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]) -> list[QualityCheck]:
+def _raw_filename(year: int, url: str) -> str:
+    suffix = ".zip" if ".zip" in url.lower() else ".ods" if ".ods" in url.lower() else ".xlsx"
+    return f"ses_{year}_national_report_tables{suffix}"
+
+
+def _quality_checks(year: int, rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]) -> list[QualityCheck]:
     return [
-        QualityCheck("source_rows_parsed", "pass" if rows_parsed else "fail", "info" if rows_parsed else "error", str(rows_parsed), "> 0", "QILT SES rows parsed from ODS tables."),
-        QualityCheck("staging_rows_loaded", "pass" if rows_parsed == staging_rows else "fail", "info" if rows_parsed == staging_rows else "error", str(staging_rows), str(rows_parsed), "Every parsed source row should be represented in staging."),
-        QualityCheck("facts_loaded", "pass" if facts_loaded else "fail", "info" if facts_loaded else "error", str(facts_loaded), "> 0", "Canonical QILT facts loaded for matched providers."),
-        QualityCheck("unmatched_source_providers", "warn" if unmatched else "pass", "warning" if unmatched else "info", str(len(unmatched)), "0 public-university providers unmatched", ", ".join(unmatched) if unmatched else "All source provider names matched."),
+        QualityCheck("source_rows_parsed", "pass" if rows_parsed else "fail", "info" if rows_parsed else "error", str(rows_parsed), "> 0", f"{year} QILT SES rows parsed from national report tables."),
+        QualityCheck("staging_rows_loaded", "pass" if rows_parsed == staging_rows else "fail", "info" if rows_parsed == staging_rows else "error", str(staging_rows), str(rows_parsed), f"Every parsed {year} source row should be represented in staging."),
+        QualityCheck("facts_loaded", "pass" if facts_loaded else "fail", "info" if facts_loaded else "error", str(facts_loaded), "> 0", f"Canonical {year} QILT facts loaded for matched providers."),
+        QualityCheck("unmatched_source_providers", "warn" if unmatched else "pass", "warning" if unmatched else "info", str(len(unmatched)), "0 public-university providers unmatched", ", ".join(unmatched) if unmatched else f"All {year} source provider names matched."),
         QualityCheck("qilt_confidence_intervals_present", "pass", "info", "stored", "stored", "90% confidence interval bounds are stored in dimensions_json and staging columns where published."),
     ]
 
