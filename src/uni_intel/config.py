@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -6,7 +7,8 @@ RAW_DIR = DATA_DIR / "raw"
 WAREHOUSE_DIR = DATA_DIR / "warehouse"
 QUALITY_DIR = DATA_DIR / "quality"
 SEED_DIR = DATA_DIR / "seed"
-DB_PATH = WAREHOUSE_DIR / "university_intel.duckdb"
+DB_PATH = Path(os.environ["UNI_INTEL_DB_PATH"]) if os.environ.get("UNI_INTEL_DB_PATH") else WAREHOUSE_DIR / "university_intel.duckdb"
+DB_ARCHIVE_PATH = WAREHOUSE_DIR / "university_intel.duckdb.gz"
 SCHEMA_PATH = PROJECT_ROOT / "sql" / "schema.sql"
 
 FINANCE_2024_URL = (

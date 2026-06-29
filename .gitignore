@@ -14,6 +14,7 @@ data/warehouse/**
 data/quality/**
 !data/raw/.gitkeep
 !data/warehouse/.gitkeep
+!data/warehouse/university_intel.duckdb.gz
 !data/quality/.gitkeep
 
 # Frontend workspace, when implemented
@@ -24,3 +25,4 @@ build/
 
 .env
 .DS_Store
+.vercel

@@ -1,24 +1,42 @@
 from __future__ import annotations
 
+import gzip
+import os
 from pathlib import Path
+import shutil
 
 import duckdb
 from fastapi import FastAPI, HTTPException, Query
 
 from uni_intel.api.metric_catalog import CURATED_METRIC_CATALOG, CatalogMetric
-from uni_intel.config import DB_PATH
+from uni_intel.config import DB_ARCHIVE_PATH, DB_PATH
 
 app = FastAPI(title="Australian University Intelligence API")
 
 
 def _connect() -> duckdb.DuckDBPyConnection:
-    path = Path(DB_PATH)
-    if not path.exists():
-        raise HTTPException(
-            status_code=503,
-            detail="DuckDB warehouse not found. Run `make ingest-finance` first.",
-        )
+    path = _resolve_db_path()
     return duckdb.connect(str(path), read_only=True)
+
+
+def _resolve_db_path() -> Path:
+    path = Path(DB_PATH)
+    if path.exists():
+        return path
+
+    archive_path = Path(DB_ARCHIVE_PATH)
+    runtime_path = Path(os.environ.get("UNI_INTEL_RUNTIME_DB_PATH", "/tmp/university_intel.duckdb"))
+    if archive_path.exists():
+        if not runtime_path.exists():
+            runtime_path.parent.mkdir(parents=True, exist_ok=True)
+            with gzip.open(archive_path, "rb") as source, runtime_path.open("wb") as target:
+                shutil.copyfileobj(source, target)
+        return runtime_path
+
+    raise HTTPException(
+        status_code=503,
+        detail="DuckDB warehouse not found. Run `make ingest-all` first.",
+    )
 
 
 def _rows_to_dicts(conn: duckdb.DuckDBPyConnection, query: str, params: list[object] | None = None):

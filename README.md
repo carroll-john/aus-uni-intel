@@ -26,6 +26,16 @@ make verify
 
 Runs ingestion, Python tests, frontend build, starts the API, and checks required frontend/API smoke endpoints.
 
+## Deployed Prototype
+
+- Web app: <https://web-kohl-nine-76.vercel.app>
+- API: <https://you-are-building-a-public-data.vercel.app>
+
+The Vercel API deployment uses `api/index.py` as a FastAPI adapter. For local
+development it reads `data/warehouse/university_intel.duckdb`; for serverless
+deployments it can inflate `data/warehouse/university_intel.duckdb.gz` into
+`/tmp` when the local DuckDB file is not present.
+
 ## Implemented Data Sources
 
 - Department of Education finance tables, 2018-2024: <https://www.education.gov.au/collections/financial-reports-higher-education-providers>

@@ -1,0 +1,15 @@
+.git/
+.playwright-mcp/
+.pytest_cache/
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+apps/web/.next/
+apps/web/node_modules/
+data/raw/**
+data/quality/**
+data/warehouse/university_intel.duckdb
+data/warehouse/prototype_check.duckdb
+work/
+outputs/

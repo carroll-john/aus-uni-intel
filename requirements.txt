@@ -1,0 +1,6 @@
+duckdb>=1.0.0
+fastapi>=0.111.0
+openpyxl>=3.1.0
+xlrd>=2.0.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
