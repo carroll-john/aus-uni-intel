@@ -4,6 +4,7 @@ import gzip
 import os
 from pathlib import Path
 import shutil
+from statistics import median
 
 import duckdb
 from fastapi import FastAPI, HTTPException, Query
@@ -115,6 +116,52 @@ def _canonical_scope_qualifier(scope: str | None, partition_columns: list[str]) 
                 f.dimension_scope
         ) = 1
         """
+
+
+def _rank_for_value(rows: list[dict[str, object]], provider_id: str, order: str = "desc") -> dict[str, object] | None:
+    scoped_rows = [row for row in rows if row.get("value") is not None]
+    current = next((row for row in scoped_rows if row["provider_id"] == provider_id), None)
+    if current is None:
+        return None
+    current_value = float(current["value"])
+    if order == "asc":
+        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) < current_value)
+    else:
+        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) > current_value)
+    return {"rank": rank, "of": len(scoped_rows), "value": current_value}
+
+
+def _median_for_rows(rows: list[dict[str, object]]) -> float | None:
+    values = [float(row["value"]) for row in rows if row.get("value") is not None]
+    return float(median(values)) if values else None
+
+
+def _rank_scope(
+    rows: list[dict[str, object]],
+    provider_id: str,
+    year: int,
+    *,
+    mission_group: str | None = None,
+    state: str | None = None,
+) -> list[dict[str, object]]:
+    scoped = [row for row in rows if int(row["reporting_year"]) == year]
+    if mission_group is not None:
+        scoped = [row for row in scoped if row.get("mission_group") == mission_group]
+    if state is not None:
+        scoped = [row for row in scoped if row.get("state") == state]
+    return scoped
+
+
+def _change_payload(current_value: float, previous_row: dict[str, object]) -> dict[str, object] | None:
+    previous_value = float(previous_row["value"])
+    if previous_value == 0:
+        return None
+    return {
+        "year": int(previous_row["reporting_year"]),
+        "from_value": previous_value,
+        "absolute": current_value - previous_value,
+        "percent": ((current_value - previous_value) / abs(previous_value)) * 100,
+    }
 
 
 @app.get("/overview")
@@ -391,6 +438,147 @@ def provider_profile(
             params,
         )
         return {"provider": provider[0], "facts": facts}
+    finally:
+        conn.close()
+
+
+@app.get("/provider/{provider_id}/metric-insight")
+def provider_metric_insight(
+    provider_id: str,
+    metric_id: str,
+    year: int | None = Query(None),
+    scope: str | None = Query(None),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
+):
+    conn = _connect()
+    try:
+        provider_rows = _rows_to_dicts(
+            conn,
+            """
+            SELECT provider_id, provider_name, state, provider_type, is_public,
+                   website, mission_group, table_classification
+            FROM providers
+            WHERE provider_id = ?
+            """,
+            [provider_id],
+        )
+        if not provider_rows:
+            raise HTTPException(status_code=404, detail="Provider not found")
+        provider = provider_rows[0]
+
+        metric_ids = _metric_ids_for_query(metric_id)
+        filters = [_metric_filter_sql(metric_ids), "p.provider_type = 'university'"]
+        params: list[object] = list(metric_ids)
+        if scope is not None:
+            filters.append("f.dimension_scope = ?")
+            params.append(scope)
+        scope_qualifier = _canonical_scope_qualifier(scope, ["f.provider_id", "f.reporting_year"])
+        rows = _rows_to_dicts(
+            conn,
+            f"""
+            SELECT p.provider_id, p.provider_name, p.state, p.mission_group,
+                   p.table_classification, f.metric_id, m.metric_name,
+                   m.metric_group, f.reporting_year, f.dimension_scope,
+                   f.value, f.unit, m.definition, m.source_agency,
+                   m.source_dataset, m.source_table, m.source_line_item,
+                   m.is_calculated, m.calculation_method, s.source_name,
+                   s.source_url, s.license, s.publication_date
+            FROM facts f
+            JOIN providers p USING (provider_id)
+            JOIN metrics m USING (metric_id)
+            JOIN source_files s USING (source_file_id)
+            WHERE {" AND ".join(filters)}
+            {scope_qualifier}
+            ORDER BY f.reporting_year, p.provider_name
+            """,
+            params,
+        )
+        rows = _normalize_metric_rows(rows, metric_id, _canonical_metric_name(conn, metric_id))
+        provider_metric_rows = [row for row in rows if row["provider_id"] == provider_id]
+        if not provider_metric_rows:
+            raise HTTPException(status_code=404, detail="No facts found for provider and metric")
+
+        selected_year = year if year is not None else max(int(row["reporting_year"]) for row in provider_metric_rows)
+        current = next((row for row in provider_metric_rows if int(row["reporting_year"]) == selected_year), None)
+        if current is None:
+            raise HTTPException(status_code=404, detail="No fact found for selected year")
+
+        current_value = float(current["value"])
+        national_rows = _rank_scope(rows, provider_id, selected_year)
+        mission_group = provider.get("mission_group")
+        state = provider.get("state")
+        mission_rows = _rank_scope(rows, provider_id, selected_year, mission_group=str(mission_group)) if mission_group else []
+        state_rows = _rank_scope(rows, provider_id, selected_year, state=str(state)) if state else []
+
+        ranks = {
+            "national": _rank_for_value(national_rows, provider_id, order),
+            "mission_group": {
+                **(_rank_for_value(mission_rows, provider_id, order) or {}),
+                "label": mission_group,
+            } if mission_group else None,
+            "state": {
+                **(_rank_for_value(state_rows, provider_id, order) or {}),
+                "label": state,
+            } if state else None,
+        }
+        medians = {
+            "national": _median_for_rows(national_rows),
+            "mission_group": _median_for_rows(mission_rows) if mission_group else None,
+            "state": _median_for_rows(state_rows) if state else None,
+        }
+
+        by_year = {int(row["reporting_year"]): row for row in provider_metric_rows}
+        changes = {
+            f"{offset}y": _change_payload(current_value, by_year[selected_year - offset])
+            for offset in (1, 3, 5)
+            if selected_year - offset in by_year
+        }
+
+        movement_reference_year = selected_year - 5 if selected_year - 5 in by_year else min(by_year)
+        current_rank = ranks["national"]["rank"] if ranks["national"] else None
+        previous_rank_payload = _rank_for_value(_rank_scope(rows, provider_id, movement_reference_year), provider_id, order)
+        rank_move = None
+        if current_rank is not None and previous_rank_payload:
+            rank_move = {
+                "year": movement_reference_year,
+                "from_rank": previous_rank_payload["rank"],
+                "to_rank": current_rank,
+                "places": int(previous_rank_payload["rank"]) - int(current_rank),
+            }
+
+        trend = sorted(provider_metric_rows, key=lambda row: int(row["reporting_year"]))
+        return {
+            "provider": provider,
+            "metric": {
+                "metric_id": metric_id,
+                "metric_name": current["metric_name"],
+                "metric_group": current["metric_group"],
+                "definition": current["definition"],
+                "unit": current["unit"],
+                "source_agency": current["source_agency"],
+                "source_dataset": current["source_dataset"],
+                "source_table": current["source_table"],
+                "source_line_item": current["source_line_item"],
+                "is_calculated": current["is_calculated"],
+                "calculation_method": current["calculation_method"],
+            },
+            "year": selected_year,
+            "scope": current["dimension_scope"],
+            "value": current_value,
+            "unit": current["unit"],
+            "current": current,
+            "trend": trend,
+            "ranks": ranks,
+            "rank_move": rank_move,
+            "medians": medians,
+            "changes": changes,
+            "source": {
+                "source_name": current["source_name"],
+                "source_url": current["source_url"],
+                "license": current["license"],
+                "publication_date": current["publication_date"],
+            },
+        }
     finally:
         conn.close()
 

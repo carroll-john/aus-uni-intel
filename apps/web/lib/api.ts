@@ -103,6 +103,54 @@ export type BenchmarkResponse = {
   rows: BenchmarkRow[];
 };
 
+export type MetricInsightRank = {
+  label?: string | null;
+  rank?: number;
+  of?: number;
+  value?: number;
+};
+
+export type MetricInsightChange = {
+  year: number;
+  from_value: number;
+  absolute: number;
+  percent: number;
+};
+
+export type MetricInsight = {
+  provider: Provider;
+  metric: Metric;
+  year: number;
+  scope: string;
+  value: number;
+  unit: string;
+  current: FactRow;
+  trend: FactRow[];
+  ranks: {
+    national: MetricInsightRank | null;
+    mission_group: MetricInsightRank | null;
+    state: MetricInsightRank | null;
+  };
+  rank_move: {
+    year: number;
+    from_rank: number;
+    to_rank: number;
+    places: number;
+  } | null;
+  medians: {
+    national: number | null;
+    mission_group: number | null;
+    state: number | null;
+  };
+  changes: Record<string, MetricInsightChange>;
+  source: {
+    source_name: string | null;
+    source_url: string | null;
+    license: string | null;
+    publication_date: string | null;
+  };
+};
+
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -161,6 +209,13 @@ export function getBenchmarks(
 
 export function getProfile(providerId: string) {
   return getJson<{ provider: Provider; facts: FactRow[] }>(`/provider/${providerId}/profile`);
+}
+
+export function getMetricInsight(providerId: string, metricId: string, year?: string, scope?: string) {
+  const params = new URLSearchParams({ metric_id: metricId });
+  if (year) params.set("year", year);
+  if (scope) params.set("scope", scope);
+  return getJson<MetricInsight>(`/provider/${providerId}/metric-insight?${params.toString()}`);
 }
 
 export function getCompare(providerIds: string[], metricIds: string[], year?: string) {
