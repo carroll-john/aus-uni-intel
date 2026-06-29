@@ -126,10 +126,6 @@ function orderedKpis(kpis: FactRow[]) {
 function aggregateSectorTrend(rows: FactRow[], unit?: string): FactRow[] {
   const recentRows = rows.filter((row) => row.reporting_year >= 2018);
   const sectorRows = recentRows.filter((row) => row.provider_id === "sector_all_pub2");
-  if (sectorRows.length && unit !== "percent") {
-    return sectorRows.sort((a, b) => a.reporting_year - b.reporting_year);
-  }
-
   const byYear = new Map<number, { count: number; row: FactRow }>();
 
   for (const row of recentRows) {
@@ -152,10 +148,14 @@ function aggregateSectorTrend(rows: FactRow[], unit?: string): FactRow[] {
     });
   }
 
-  return Array.from(byYear.values())
+  const aggregatedRows = Array.from(byYear.values())
     .map(({ count, row }) => ({
       ...row,
       value: unit === "percent" && count ? row.value / count : row.value
-    }))
+    }));
+
+  const sectorByYear = new Map(sectorRows.map((row) => [row.reporting_year, row]));
+  return aggregatedRows
+    .map((row) => (unit === "percent" ? row : sectorByYear.get(row.reporting_year) ?? row))
     .sort((a, b) => a.reporting_year - b.reporting_year);
 }

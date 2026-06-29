@@ -13,6 +13,12 @@ from uni_intel.config import DB_ARCHIVE_PATH, DB_PATH
 
 app = FastAPI(title="Australian University Intelligence API")
 
+TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation"
+LEGACY_TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations"
+METRIC_HISTORY_ALIASES = {
+    TOTAL_REVENUE_METRIC_ID: [TOTAL_REVENUE_METRIC_ID, LEGACY_TOTAL_REVENUE_METRIC_ID],
+}
+
 
 def _connect() -> duckdb.DuckDBPyConnection:
     path = _resolve_db_path()
@@ -48,6 +54,37 @@ def _rows_to_dicts(conn: duckdb.DuckDBPyConnection, query: str, params: list[obj
 def _single_value(conn: duckdb.DuckDBPyConnection, query: str, params: list[object] | None = None):
     row = conn.execute(query, params or []).fetchone()
     return row[0] if row else None
+
+
+def _metric_ids_for_query(metric_id: str) -> list[str]:
+    return METRIC_HISTORY_ALIASES.get(metric_id, [metric_id])
+
+
+def _metric_filter_sql(metric_ids: list[str]) -> str:
+    placeholders = ", ".join("?" for _ in metric_ids)
+    return f"f.metric_id IN ({placeholders})"
+
+
+def _canonical_metric_name(conn: duckdb.DuckDBPyConnection, metric_id: str) -> str | None:
+    return _single_value(conn, "SELECT metric_name FROM metrics WHERE metric_id = ?", [metric_id])
+
+
+def _normalize_metric_rows(
+    rows: list[dict[str, object]],
+    requested_metric_id: str,
+    canonical_metric_name: str | None,
+) -> list[dict[str, object]]:
+    alias_metric_ids = METRIC_HISTORY_ALIASES.get(requested_metric_id)
+    if not alias_metric_ids:
+        return rows
+
+    for row in rows:
+        if row.get("metric_id") not in alias_metric_ids:
+            continue
+        row["metric_id"] = requested_metric_id
+        if canonical_metric_name:
+            row["metric_name"] = canonical_metric_name
+    return rows
 
 
 def _canonical_scope_qualifier(scope: str | None, partition_columns: list[str]) -> str:
@@ -263,10 +300,12 @@ def years(metric_id: str | None = None):
     conn = _connect()
     try:
         if metric_id:
+            metric_ids = _metric_ids_for_query(metric_id)
+            placeholders = ", ".join("?" for _ in metric_ids)
             return _rows_to_dicts(
                 conn,
-                "SELECT DISTINCT reporting_year FROM facts WHERE metric_id = ? ORDER BY reporting_year",
-                [metric_id],
+                f"SELECT DISTINCT reporting_year FROM facts WHERE metric_id IN ({placeholders}) ORDER BY reporting_year",
+                metric_ids,
             )
         return _rows_to_dicts(
             conn,
@@ -281,15 +320,17 @@ def scopes(metric_id: str | None = None):
     conn = _connect()
     try:
         if metric_id:
+            metric_ids = _metric_ids_for_query(metric_id)
+            placeholders = ", ".join("?" for _ in metric_ids)
             return _rows_to_dicts(
                 conn,
-                """
+                f"""
                 SELECT DISTINCT dimension_scope
                 FROM facts
-                WHERE metric_id = ?
+                WHERE metric_id IN ({placeholders})
                 ORDER BY dimension_scope
                 """,
-                [metric_id],
+                metric_ids,
             )
         return _rows_to_dicts(
             conn,
@@ -357,8 +398,9 @@ def rankings(
     conn = _connect()
     try:
         direction = "ASC" if order == "asc" else "DESC"
-        filters = ["f.metric_id = ?", "p.provider_type = 'university'"]
-        params: list[object] = [metric_id]
+        metric_ids = _metric_ids_for_query(metric_id)
+        filters = [_metric_filter_sql(metric_ids), "p.provider_type = 'university'"]
+        params: list[object] = list(metric_ids)
         if year is not None:
             filters.append("f.reporting_year = ?")
             params.append(year)
@@ -384,7 +426,7 @@ def rankings(
             """,
             params,
         )
-        return rows
+        return _normalize_metric_rows(rows, metric_id, _canonical_metric_name(conn, metric_id))
     finally:
         conn.close()
 
@@ -402,12 +444,13 @@ def compare(
         raise HTTPException(status_code=400, detail="provider_ids and metric_ids are required")
 
     provider_placeholders = ", ".join("?" for _ in provider_list)
-    metric_placeholders = ", ".join("?" for _ in metric_list)
+    query_metric_list = [alias for metric_id in metric_list for alias in _metric_ids_for_query(metric_id)]
+    metric_placeholders = ", ".join("?" for _ in query_metric_list)
     filters = [
         f"f.provider_id IN ({provider_placeholders})",
         f"f.metric_id IN ({metric_placeholders})",
     ]
-    params: list[object] = provider_list + metric_list
+    params: list[object] = provider_list + query_metric_list
     if year is not None:
         filters.append("f.reporting_year = ?")
         params.append(year)
@@ -418,7 +461,7 @@ def compare(
 
     conn = _connect()
     try:
-        return _rows_to_dicts(
+        rows = _rows_to_dicts(
             conn,
             f"""
             SELECT p.provider_id, p.provider_name, f.metric_id, m.metric_name,
@@ -432,6 +475,9 @@ def compare(
             """,
             params,
         )
+        for requested_metric_id in metric_list:
+            rows = _normalize_metric_rows(rows, requested_metric_id, _canonical_metric_name(conn, requested_metric_id))
+        return rows
     finally:
         conn.close()
 
@@ -462,8 +508,9 @@ def trends(
 ):
     conn = _connect()
     try:
-        filters = ["f.metric_id = ?"]
-        params: list[object] = [metric_id]
+        metric_ids = _metric_ids_for_query(metric_id)
+        filters = [_metric_filter_sql(metric_ids)]
+        params: list[object] = list(metric_ids)
         if provider_id:
             filters.append("f.provider_id = ?")
             params.append(provider_id)
@@ -471,7 +518,7 @@ def trends(
             filters.append("f.dimension_scope = ?")
             params.append(scope)
         scope_qualifier = _canonical_scope_qualifier(scope, ["f.provider_id", "f.metric_id", "f.reporting_year"])
-        return _rows_to_dicts(
+        rows = _rows_to_dicts(
             conn,
             f"""
             SELECT f.reporting_year, p.provider_id, p.provider_name, f.metric_id,
@@ -485,6 +532,7 @@ def trends(
             """,
             params,
         )
+        return _normalize_metric_rows(rows, metric_id, _canonical_metric_name(conn, metric_id))
     finally:
         conn.close()
 
