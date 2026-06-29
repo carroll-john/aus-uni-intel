@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS providers (
     is_public BOOLEAN NOT NULL DEFAULT TRUE,
     country TEXT NOT NULL DEFAULT 'AU',
     website TEXT,
+    mission_group TEXT,
+    table_classification TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

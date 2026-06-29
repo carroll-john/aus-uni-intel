@@ -4,9 +4,11 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +16,14 @@ import {
 } from "recharts";
 import type { FactRow } from "@/lib/api";
 import { formatAxisValue, formatValue } from "@/lib/format";
+
+export const BENCHMARK_KEY_PREFIX = "benchmark:";
+
+function isBenchmarkKey(key: string | undefined) {
+  return Boolean(key && key.startsWith(BENCHMARK_KEY_PREFIX));
+}
+
+const benchmarkColor = "#64748b";
 
 type ChartDatum = {
   label?: string;
@@ -24,7 +34,13 @@ type ChartDatum = {
   [key: string]: string | number | undefined;
 };
 
-export function RankingBarChart({ rows }: { rows: FactRow[] }) {
+export function RankingBarChart({
+  rows,
+  benchmark
+}: {
+  rows: FactRow[];
+  benchmark?: { value: number; label: string };
+}) {
   const data = rows.slice(0, 8).map((row) => ({
     provider: row.provider_name?.replace("The University of ", "U. ") ?? row.provider_id,
     unit: row.unit,
@@ -41,6 +57,14 @@ export function RankingBarChart({ rows }: { rows: FactRow[] }) {
           <YAxis dataKey="provider" type="category" width={130} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
           <Bar dataKey="value" fill="#147f82" radius={[0, 4, 4, 0]} />
+          {benchmark && Number.isFinite(benchmark.value) ? (
+            <ReferenceLine
+              x={benchmark.value}
+              stroke={benchmarkColor}
+              strokeDasharray="5 4"
+              label={{ value: benchmark.label, position: "top", fontSize: 11, fill: benchmarkColor }}
+            />
+          ) : null}
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -89,10 +113,12 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
   }
 
   const data = Array.from(yearMap.values()).sort((a, b) => Number(a.year) - Number(b.year));
-  const providers = Array.from(providerMap.entries()).map(([key, label], index) => ({
+  let colorIndex = 0;
+  const providers = Array.from(providerMap.entries()).map(([key, label]) => ({
     key,
     label,
-    color: chartColors[index % chartColors.length]
+    benchmark: isBenchmarkKey(key),
+    color: isBenchmarkKey(key) ? benchmarkColor : chartColors[colorIndex++ % chartColors.length]
   }));
   const axisUnit = singleUnit(rows);
 
@@ -109,11 +135,13 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
           <Legend wrapperStyle={{ fontSize: 12 }} />
           {providers.map((provider) => (
             <Line
+              connectNulls
               dataKey={provider.key}
               dot={{ r: 3 }}
               key={provider.key}
               name={provider.label}
               stroke={provider.color}
+              strokeDasharray={provider.benchmark ? "6 4" : undefined}
               strokeWidth={2}
               type="monotone"
             />
@@ -128,7 +156,8 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
   const data = rows.map((row) => ({
     label: shortProviderName(row.provider_name ?? row.provider_id ?? ""),
     unit: row.unit,
-    value: row.value
+    value: row.value,
+    benchmark: isBenchmarkKey(row.provider_id)
   }));
   const axisUnit = singleUnit(rows);
   if (!data.length) return <EmptyChart />;
@@ -140,7 +169,11 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
           <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={56} />
           <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
-          <Bar dataKey="value" fill="#b7791f" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="value" fill="#b7791f" radius={[4, 4, 0, 0]}>
+            {data.map((datum, index) => (
+              <Cell key={index} fill={datum.benchmark ? benchmarkColor : "#b7791f"} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

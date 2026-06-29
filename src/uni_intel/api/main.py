@@ -201,7 +201,8 @@ def providers():
         return _rows_to_dicts(
             conn,
             """
-            SELECT provider_id, provider_name, state, provider_type, is_public, website
+            SELECT provider_id, provider_name, state, provider_type, is_public,
+                   website, mission_group, table_classification
             FROM providers
             ORDER BY provider_type, provider_name
             """,
@@ -357,7 +358,8 @@ def provider_profile(
         provider = _rows_to_dicts(
             conn,
             """
-            SELECT provider_id, provider_name, state, provider_type, is_public, website
+            SELECT provider_id, provider_name, state, provider_type, is_public,
+                   website, mission_group, table_classification
             FROM providers
             WHERE provider_id = ?
             """,
@@ -398,6 +400,8 @@ def rankings(
     metric_id: str,
     year: int | None = Query(None),
     scope: str | None = Query(None),
+    mission_group: str | None = Query(None),
+    state: str | None = Query(None),
     limit: int = Query(25, ge=1, le=100),
     order: str = Query("desc", pattern="^(asc|desc)$"),
 ):
@@ -413,6 +417,12 @@ def rankings(
         if scope is not None:
             filters.append("f.dimension_scope = ?")
             params.append(scope)
+        if mission_group is not None:
+            filters.append("p.mission_group = ?")
+            params.append(mission_group)
+        if state is not None:
+            filters.append("p.state = ?")
+            params.append(state)
         scope_qualifier = _canonical_scope_qualifier(scope, ["f.provider_id", "f.metric_id", "f.reporting_year"])
         params.append(limit)
         rows = _rows_to_dicts(
@@ -433,6 +443,78 @@ def rankings(
             params,
         )
         return _normalize_metric_rows(rows, metric_id, _canonical_metric_name(conn, metric_id))
+    finally:
+        conn.close()
+
+
+@app.get("/benchmarks")
+def benchmarks(
+    metric_id: str,
+    year: int | None = Query(None),
+    scope: str | None = Query(None),
+    group_by: str = Query("mission_group", pattern="^(mission_group|state)$"),
+    mission_group: str | None = Query(None),
+    state: str | None = Query(None),
+):
+    """Peer-group averages for a metric, grouped by mission group or state.
+
+    Powers the rankings reference line and the compare benchmark series. When no
+    scope is supplied each provider contributes its canonical scope only, so a
+    dual-sector provider is not double-counted in the group average.
+    """
+    conn = _connect()
+    try:
+        group_column = "p.mission_group" if group_by == "mission_group" else "p.state"
+        metric_ids = _metric_ids_for_query(metric_id)
+        filters = [
+            _metric_filter_sql(metric_ids),
+            "p.provider_type = 'university'",
+            f"{group_column} IS NOT NULL",
+            f"{group_column} <> ''",
+        ]
+        params: list[object] = list(metric_ids)
+        if year is not None:
+            filters.append("f.reporting_year = ?")
+            params.append(year)
+        if scope is not None:
+            filters.append("f.dimension_scope = ?")
+            params.append(scope)
+        if mission_group is not None:
+            filters.append("p.mission_group = ?")
+            params.append(mission_group)
+        if state is not None:
+            filters.append("p.state = ?")
+            params.append(state)
+        scope_qualifier = _canonical_scope_qualifier(scope, ["f.provider_id", "f.reporting_year"])
+        rows = _rows_to_dicts(
+            conn,
+            f"""
+            WITH base AS (
+                SELECT {group_column} AS group_value,
+                       f.reporting_year AS reporting_year,
+                       f.value AS value,
+                       f.unit AS unit
+                FROM facts f
+                JOIN providers p USING (provider_id)
+                JOIN metrics m USING (metric_id)
+                WHERE {" AND ".join(filters)}
+                {scope_qualifier}
+            )
+            SELECT group_value,
+                   reporting_year,
+                   AVG(value) AS average,
+                   MEDIAN(value) AS median,
+                   MIN(value) AS minimum,
+                   MAX(value) AS maximum,
+                   COUNT(*) AS provider_count,
+                   ANY_VALUE(unit) AS unit
+            FROM base
+            GROUP BY group_value, reporting_year
+            ORDER BY reporting_year, group_value
+            """,
+            params,
+        )
+        return {"group_by": group_by, "rows": rows}
     finally:
         conn.close()
 

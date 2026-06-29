@@ -20,6 +20,8 @@ def apply_lightweight_migrations(conn: duckdb.DuckDBPyConnection) -> None:
     """Keep existing local DuckDB files compatible with additive schema changes."""
     for statement in [
         "ALTER TABLE facts ADD COLUMN IF NOT EXISTS dimensions_json TEXT DEFAULT '{}'",
+        "ALTER TABLE providers ADD COLUMN IF NOT EXISTS mission_group TEXT",
+        "ALTER TABLE providers ADD COLUMN IF NOT EXISTS table_classification TEXT",
     ]:
         conn.execute(statement)
 

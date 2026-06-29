@@ -14,6 +14,7 @@ type CompareControlsProps = {
   providers: Provider[];
   selectedMetricId: string;
   selectedProviderIds: string[];
+  selectedBenchmark: string;
   year: string;
   catalogMode: "curated" | "raw";
 };
@@ -26,12 +27,18 @@ export function CompareControls({
   catalogMode,
   selectedMetricId,
   selectedProviderIds,
+  selectedBenchmark,
   year
 }: CompareControlsProps) {
   const [providerQuery, setProviderQuery] = useState("");
   const [metricQuery, setMetricQuery] = useState("");
   const [providerIds, setProviderIds] = useState(selectedProviderIds);
   const [metricId, setMetricId] = useState(selectedMetricId);
+  const [groupFilter, setGroupFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+
+  const missionGroups = useMemo(() => distinct(providers.map((provider) => provider.mission_group)), [providers]);
+  const states = useMemo(() => distinct(providers.map((provider) => provider.state)), [providers]);
 
   const selectedProviders = useMemo(
     () => providerIds.map((id) => providers.find((provider) => provider.provider_id === id)).filter(Boolean) as Provider[],
@@ -42,9 +49,19 @@ export function CompareControls({
     [metricId, metrics]
   );
   const filteredProviders = useMemo(
-    () => filterProviders(providers, providerQuery, providerIds),
-    [providerIds, providerQuery, providers]
+    () => filterProviders(providers, providerQuery, providerIds, groupFilter, stateFilter),
+    [groupFilter, providerIds, providerQuery, providers, stateFilter]
   );
+
+  const addShown = () =>
+    setProviderIds((current) => {
+      const next = [...current];
+      for (const provider of filteredProviders) {
+        if (next.length >= maxProviders) break;
+        if (!next.includes(provider.provider_id)) next.push(provider.provider_id);
+      }
+      return next;
+    });
   const filteredMetrics = useMemo(
     () => filterMetrics(metrics, metricQuery, metricId),
     [metricId, metricQuery, metrics]
@@ -68,12 +85,48 @@ export function CompareControls({
             items={selectedProviders.map((provider) => ({ id: provider.provider_id, label: provider.provider_name }))}
             onRemove={(id) => setProviderIds((current) => current.filter((providerId) => providerId !== id))}
           />
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Filter by mission group"
+              className="rounded-md border border-line bg-white px-2 py-1.5 text-xs"
+              onChange={(event) => setGroupFilter(event.target.value)}
+              value={groupFilter}
+            >
+              <option value="">All groups</option>
+              {missionGroups.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Filter by state"
+              className="rounded-md border border-line bg-white px-2 py-1.5 text-xs"
+              onChange={(event) => setStateFilter(event.target.value)}
+              value={stateFilter}
+            >
+              <option value="">All states</option>
+              {states.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            <button
+              className="rounded-md border border-line bg-white px-2 py-1.5 text-xs font-medium text-teal disabled:cursor-not-allowed disabled:text-slate-300"
+              disabled={providerIds.length >= maxProviders || filteredProviders.length === 0}
+              onClick={addShown}
+              type="button"
+            >
+              Add shown
+            </button>
+          </div>
           <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-line">
             {filteredProviders.map((provider) => (
               <SelectableRow
                 disabled={!providerIds.includes(provider.provider_id) && providerIds.length >= maxProviders}
                 key={provider.provider_id}
-                meta={provider.state ?? "University"}
+                meta={providerMeta(provider)}
                 onToggle={() => setProviderIds((current) => toggleSelection(current, provider.provider_id))}
                 selected={providerIds.includes(provider.provider_id)}
                 title={provider.provider_name}
@@ -116,6 +169,22 @@ export function CompareControls({
               name="year"
             />
           </div>
+          <label className="mt-3 block text-xs font-medium uppercase text-muted" htmlFor="compare-benchmark">
+            Benchmark group
+          </label>
+          <select
+            className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+            defaultValue={selectedBenchmark}
+            id="compare-benchmark"
+            name="benchmark"
+          >
+            <option value="">None</option>
+            {missionGroups.map((group) => (
+              <option key={group} value={group}>
+                {group} average
+              </option>
+            ))}
+          </select>
           <button
             className="mt-4 w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
             disabled={providerIds.length === 0 || !metricId}
@@ -277,14 +346,30 @@ function toggleSelection(current: string[], id: string) {
   return [...current, id];
 }
 
-function filterProviders(providers: Provider[], query: string, selectedIds: string[]) {
+function filterProviders(
+  providers: Provider[],
+  query: string,
+  selectedIds: string[],
+  groupFilter: string,
+  stateFilter: string
+) {
   const normalizedQuery = normalize(query);
   return providers
     .filter((provider) => {
+      if (groupFilter && provider.mission_group !== groupFilter) return false;
+      if (stateFilter && provider.state !== stateFilter) return false;
       if (!normalizedQuery) return true;
-      return normalize(`${provider.provider_name} ${provider.state ?? ""}`).includes(normalizedQuery);
+      return normalize(`${provider.provider_name} ${provider.state ?? ""} ${provider.mission_group ?? ""}`).includes(normalizedQuery);
     })
     .sort((a, b) => bySelectedThenName(a.provider_id, b.provider_id, a.provider_name, b.provider_name, selectedIds));
+}
+
+function providerMeta(provider: Provider) {
+  return [provider.mission_group, provider.state].filter(Boolean).join(" · ") || "University";
+}
+
+function distinct(values: Array<string | null>) {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
 }
 
 function filterMetrics(metrics: SelectableMetric[], query: string, selectedId: string) {

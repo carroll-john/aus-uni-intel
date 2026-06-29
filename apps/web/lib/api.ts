@@ -5,6 +5,8 @@ export type Provider = {
   provider_type: string;
   is_public: boolean;
   website: string | null;
+  mission_group: string | null;
+  table_classification: string | null;
 };
 
 export type Metric = {
@@ -85,6 +87,22 @@ export type Overview = {
   quality: QualityCheck[];
 };
 
+export type BenchmarkRow = {
+  group_value: string;
+  reporting_year: number;
+  average: number;
+  median: number;
+  minimum: number;
+  maximum: number;
+  provider_count: number;
+  unit: string;
+};
+
+export type BenchmarkResponse = {
+  group_by: "mission_group" | "state";
+  rows: BenchmarkRow[];
+};
+
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 async function getJson<T>(path: string): Promise<T> {
@@ -114,11 +132,31 @@ export function getMetricCatalog(includeMissing = false) {
   return getJson<MetricCatalogItem[]>(`/metric-catalog${query ? `?${query}` : ""}`);
 }
 
-export function getRankings(metricId: string, year?: string, scope?: string, limit = 25) {
+export function getRankings(
+  metricId: string,
+  year?: string,
+  scope?: string,
+  limit = 25,
+  filters: { missionGroup?: string; state?: string } = {}
+) {
   const params = new URLSearchParams({ metric_id: metricId, limit: String(limit) });
   if (year) params.set("year", year);
   if (scope) params.set("scope", scope);
+  if (filters.missionGroup) params.set("mission_group", filters.missionGroup);
+  if (filters.state) params.set("state", filters.state);
   return getJson<FactRow[]>(`/rankings?${params.toString()}`);
+}
+
+export function getBenchmarks(
+  metricId: string,
+  options: { year?: string; scope?: string; groupBy?: "mission_group" | "state"; missionGroup?: string } = {}
+) {
+  const params = new URLSearchParams({ metric_id: metricId });
+  if (options.year) params.set("year", options.year);
+  if (options.scope) params.set("scope", options.scope);
+  if (options.groupBy) params.set("group_by", options.groupBy);
+  if (options.missionGroup) params.set("mission_group", options.missionGroup);
+  return getJson<BenchmarkResponse>(`/benchmarks?${params.toString()}`);
 }
 
 export function getProfile(providerId: string) {

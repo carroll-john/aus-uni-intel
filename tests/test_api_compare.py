@@ -136,6 +136,74 @@ def test_rankings_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
     assert [row["value"] for row in rows] == [180.0, 90.0]
 
 
+def test_rankings_filters_by_mission_group(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    response = client.get(
+        "/rankings",
+        params={"metric_id": "finance_test_metric", "year": 2024, "mission_group": "Go8"},
+    )
+
+    assert response.status_code == 200
+    rows = response.json()
+    assert [row["provider_id"] for row in rows] == ["provider_a"]
+    assert {row["dimension_scope"] for row in rows} == {"Total Institution"}
+
+
+def test_rankings_filters_by_state(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    response = client.get(
+        "/rankings",
+        params={"metric_id": "finance_test_metric", "year": 2024, "state": "VIC"},
+    )
+
+    assert response.status_code == 200
+    rows = response.json()
+    assert [row["provider_id"] for row in rows] == ["provider_b"]
+
+
+def test_benchmarks_average_by_mission_group_uses_canonical_scope(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    response = client.get(
+        "/benchmarks",
+        params={"metric_id": "finance_test_metric", "year": 2024},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["group_by"] == "mission_group"
+    by_group = {row["group_value"]: row for row in payload["rows"]}
+    # Canonical Total Institution values (100/200), not the HED/TAFE rows.
+    assert by_group["Go8"]["average"] == 100.0
+    assert by_group["Go8"]["provider_count"] == 1
+    assert by_group["ATN"]["average"] == 200.0
+
+
+def test_benchmarks_group_by_state(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    response = client.get(
+        "/benchmarks",
+        params={"metric_id": "finance_test_metric", "year": 2024, "group_by": "state"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["group_by"] == "state"
+    by_state = {row["group_value"]: row["average"] for row in payload["rows"]}
+    assert by_state == {"NSW": 100.0, "VIC": 200.0}
+
+
 def _build_compare_db(tmp_path: Path) -> Path:
     db_path = tmp_path / "compare.duckdb"
     conn = duckdb.connect(str(db_path))
@@ -143,12 +211,15 @@ def _build_compare_db(tmp_path: Path) -> Path:
         conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
         conn.executemany(
             """
-            INSERT INTO providers (provider_id, provider_name, state, provider_type, is_public)
-            VALUES (?, ?, ?, 'university', TRUE)
+            INSERT INTO providers (
+                provider_id, provider_name, state, mission_group,
+                table_classification, provider_type, is_public
+            )
+            VALUES (?, ?, ?, ?, 'Table A', 'university', TRUE)
             """,
             [
-                ("provider_a", "Provider A", "NSW"),
-                ("provider_b", "Provider B", "VIC"),
+                ("provider_a", "Provider A", "NSW", "Go8"),
+                ("provider_b", "Provider B", "VIC", "ATN"),
             ],
         )
         conn.execute(
