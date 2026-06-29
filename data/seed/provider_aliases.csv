@@ -1,0 +1,64 @@
+alias,provider_id,source_system,confidence
+All Institutions (PUB2),sector_all_pub2,education_finance,1.0
+Australian Catholic University,australian_catholic_university,education_finance,1.0
+University of Adelaide,university_of_adelaide,education_finance,1.0
+The University of Adelaide,university_of_adelaide,manual,0.98
+Australian National University,australian_national_university,education_finance,1.0
+The Australian National University,australian_national_university,manual,0.98
+ANU,australian_national_university,manual,0.95
+Federation University Australia,federation_university_australia,education_finance,1.0
+Charles Sturt University,charles_sturt_university,education_finance,1.0
+Central Queensland University,cquniversity,education_finance,1.0
+CQUniversity,cquniversity,manual,1.0
+CQU,cquniversity,manual,0.95
+Curtin University of Technology,curtin_university,education_finance,1.0
+Curtin University,curtin_university,manual,1.0
+Deakin University,deakin_university,education_finance,1.0
+Edith Cowan University,edith_cowan_university,education_finance,1.0
+Flinders University,flinders_university,education_finance,1.0
+Griffith University,griffith_university,education_finance,1.0
+James Cook University,james_cook_university,education_finance,1.0
+La Trobe University,la_trobe_university,education_finance,1.0
+Macquarie University,macquarie_university,education_finance,1.0
+The University of Melbourne,university_of_melbourne,education_finance,1.0
+University of Melbourne,university_of_melbourne,manual,1.0
+Monash University,monash_university,education_finance,1.0
+Murdoch University,murdoch_university,education_finance,1.0
+The University of Newcastle,university_of_newcastle,education_finance,1.0
+University of Newcastle,university_of_newcastle,manual,1.0
+Charles Darwin University,charles_darwin_university,education_finance,1.0
+Queensland University of Technology,queensland_university_of_technology,education_finance,1.0
+QUT,queensland_university_of_technology,manual,0.95
+RMIT University,rmit_university,education_finance,1.0
+Royal Melbourne Institute of Technology,rmit_university,manual,0.95
+Southern Cross University,southern_cross_university,education_finance,1.0
+University of the Sunshine Coast,university_of_the_sunshine_coast,education_finance,1.0
+UniSC,university_of_the_sunshine_coast,manual,0.95
+Swinburne University of Technology,swinburne_university_of_technology,education_finance,1.0
+Swinburne University,swinburne_university_of_technology,manual,0.95
+University of Canberra,university_of_canberra,education_finance,1.0
+The University of New England,university_of_new_england,education_finance,1.0
+University of New England,university_of_new_england,manual,1.0
+The University of New South Wales,university_of_new_south_wales,education_finance,1.0
+University of New South Wales,university_of_new_south_wales,manual,1.0
+UNSW Sydney,university_of_new_south_wales,manual,0.95
+UNSW,university_of_new_south_wales,manual,0.95
+The University of Queensland,university_of_queensland,education_finance,1.0
+University of Queensland,university_of_queensland,manual,1.0
+UQ,university_of_queensland,manual,0.95
+University of South Australia,university_of_south_australia,education_finance,1.0
+UniSA,university_of_south_australia,manual,0.95
+University of Southern Queensland,university_of_southern_queensland,education_finance,1.0
+UniSQ,university_of_southern_queensland,manual,0.95
+The University of Sydney,university_of_sydney,education_finance,1.0
+University of Sydney,university_of_sydney,manual,1.0
+University of Tasmania,university_of_tasmania,education_finance,1.0
+University of Technology Sydney,university_of_technology_sydney,manual,1.0
+"University of Technology, Sydney",university_of_technology_sydney,education_finance,1.0
+UTS,university_of_technology_sydney,manual,0.95
+The University of Western Australia,university_of_western_australia,education_finance,1.0
+University of Western Australia,university_of_western_australia,manual,1.0
+UWA,university_of_western_australia,manual,0.95
+Western Sydney University,western_sydney_university,education_finance,1.0
+Victoria University,victoria_university,education_finance,1.0
+University of Wollongong,university_of_wollongong,education_finance,1.0

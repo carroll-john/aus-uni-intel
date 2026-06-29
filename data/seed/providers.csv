@@ -1,0 +1,39 @@
+provider_id,provider_name,state,provider_type,is_public,website
+sector_all_pub2,All Institutions (PUB2),AU,sector_aggregate,false,https://www.education.gov.au/
+australian_catholic_university,Australian Catholic University,National,university,true,https://www.acu.edu.au/
+university_of_adelaide,University of Adelaide,SA,university,true,https://www.adelaide.edu.au/
+australian_national_university,Australian National University,ACT,university,true,https://www.anu.edu.au/
+federation_university_australia,Federation University Australia,VIC,university,true,https://federation.edu.au/
+charles_sturt_university,Charles Sturt University,NSW,university,true,https://www.csu.edu.au/
+cquniversity,CQUniversity,QLD,university,true,https://www.cqu.edu.au/
+curtin_university,Curtin University,WA,university,true,https://www.curtin.edu.au/
+deakin_university,Deakin University,VIC,university,true,https://www.deakin.edu.au/
+edith_cowan_university,Edith Cowan University,WA,university,true,https://www.ecu.edu.au/
+flinders_university,Flinders University,SA,university,true,https://www.flinders.edu.au/
+griffith_university,Griffith University,QLD,university,true,https://www.griffith.edu.au/
+james_cook_university,James Cook University,QLD,university,true,https://www.jcu.edu.au/
+la_trobe_university,La Trobe University,VIC,university,true,https://www.latrobe.edu.au/
+macquarie_university,Macquarie University,NSW,university,true,https://www.mq.edu.au/
+university_of_melbourne,The University of Melbourne,VIC,university,true,https://www.unimelb.edu.au/
+monash_university,Monash University,VIC,university,true,https://www.monash.edu/
+murdoch_university,Murdoch University,WA,university,true,https://www.murdoch.edu.au/
+university_of_newcastle,The University of Newcastle,NSW,university,true,https://www.newcastle.edu.au/
+charles_darwin_university,Charles Darwin University,NT,university,true,https://www.cdu.edu.au/
+queensland_university_of_technology,Queensland University of Technology,QLD,university,true,https://www.qut.edu.au/
+rmit_university,RMIT University,VIC,university,true,https://www.rmit.edu.au/
+southern_cross_university,Southern Cross University,NSW,university,true,https://www.scu.edu.au/
+university_of_the_sunshine_coast,University of the Sunshine Coast,QLD,university,true,https://www.usc.edu.au/
+swinburne_university_of_technology,Swinburne University of Technology,VIC,university,true,https://www.swinburne.edu.au/
+university_of_canberra,University of Canberra,ACT,university,true,https://www.canberra.edu.au/
+university_of_new_england,The University of New England,NSW,university,true,https://www.une.edu.au/
+university_of_new_south_wales,The University of New South Wales,NSW,university,true,https://www.unsw.edu.au/
+university_of_queensland,The University of Queensland,QLD,university,true,https://www.uq.edu.au/
+university_of_south_australia,University of South Australia,SA,university,true,https://www.unisa.edu.au/
+university_of_southern_queensland,University of Southern Queensland,QLD,university,true,https://www.unisq.edu.au/
+university_of_sydney,The University of Sydney,NSW,university,true,https://www.sydney.edu.au/
+university_of_tasmania,University of Tasmania,TAS,university,true,https://www.utas.edu.au/
+university_of_technology_sydney,University of Technology Sydney,NSW,university,true,https://www.uts.edu.au/
+university_of_western_australia,The University of Western Australia,WA,university,true,https://www.uwa.edu.au/
+western_sydney_university,Western Sydney University,NSW,university,true,https://www.westernsydney.edu.au/
+victoria_university,Victoria University,VIC,university,true,https://www.vu.edu.au/
+university_of_wollongong,University of Wollongong,NSW,university,true,https://www.uow.edu.au/

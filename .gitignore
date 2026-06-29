@@ -1,0 +1,26 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.playwright-mcp/
+*.pyc
+*.egg-info/
+work/
+
+# Local generated data
+data/raw/**
+data/warehouse/**
+data/quality/**
+!data/raw/.gitkeep
+!data/warehouse/.gitkeep
+!data/quality/.gitkeep
+
+# Frontend workspace, when implemented
+node_modules/
+.next/
+dist/
+build/
+
+.env
+.DS_Store

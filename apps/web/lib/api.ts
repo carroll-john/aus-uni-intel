@@ -1,0 +1,150 @@
+export type Provider = {
+  provider_id: string;
+  provider_name: string;
+  state: string | null;
+  provider_type: string;
+  is_public: boolean;
+  website: string | null;
+};
+
+export type Metric = {
+  metric_id: string;
+  metric_name: string;
+  metric_group: string;
+  unit: string;
+  value_type: string;
+  definition: string;
+  source_agency: string;
+  source_dataset: string;
+  source_table: string | null;
+  source_line_item: string | null;
+  is_calculated: boolean;
+  calculation_method: string | null;
+};
+
+export type MetricCatalogItem = Omit<Metric, "metric_id"> & {
+  metric_id: string | null;
+  raw_metric_name: string | null;
+  raw_metric_group: string | null;
+  catalog_group: string;
+  catalog_item_id: string;
+  preferred_scope: string | null;
+  source_status: "available" | "calculated_needed" | "missing";
+  source_note: string;
+  selectable: boolean;
+};
+
+export type FactRow = {
+  provider_id?: string;
+  provider_name?: string;
+  metric_id: string;
+  metric_name: string;
+  metric_group?: string;
+  reporting_year: number;
+  dimension_scope: string;
+  value: number;
+  unit: string;
+  definition?: string;
+  source_dataset?: string;
+  calculation_method?: string | null;
+};
+
+export type SourceFile = {
+  source_file_id: string;
+  dataset_id: string;
+  source_name: string;
+  source_url: string;
+  local_path: string;
+  file_format: string;
+  reporting_year: number | null;
+  downloaded_at: string;
+  checksum_sha256: string;
+  row_count: number;
+  license: string | null;
+  publication_date: string | null;
+  notes: string | null;
+};
+
+export type QualityCheck = {
+  run_id?: string;
+  source_file_id?: string | null;
+  source_name?: string | null;
+  check_name: string;
+  status: "pass" | "warn" | "fail";
+  severity: "info" | "warning" | "error";
+  observed_value: string | null;
+  expected_value: string | null;
+  details: string | null;
+  created_at?: string;
+};
+
+export type Overview = {
+  summary: Record<string, number | string | null>;
+  kpis: FactRow[];
+  top_rankings: FactRow[];
+  quality: QualityCheck[];
+};
+
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`API ${path} failed with ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+export function getOverview() {
+  return getJson<Overview>("/overview");
+}
+
+export function getProviders() {
+  return getJson<Provider[]>("/providers");
+}
+
+export function getMetrics() {
+  return getJson<Metric[]>("/metrics");
+}
+
+export function getMetricCatalog(includeMissing = false) {
+  const params = new URLSearchParams();
+  if (includeMissing) params.set("include_missing", "true");
+  const query = params.toString();
+  return getJson<MetricCatalogItem[]>(`/metric-catalog${query ? `?${query}` : ""}`);
+}
+
+export function getRankings(metricId: string, year?: string, scope?: string, limit = 25) {
+  const params = new URLSearchParams({ metric_id: metricId, limit: String(limit) });
+  if (year) params.set("year", year);
+  if (scope) params.set("scope", scope);
+  return getJson<FactRow[]>(`/rankings?${params.toString()}`);
+}
+
+export function getProfile(providerId: string) {
+  return getJson<{ provider: Provider; facts: FactRow[] }>(`/provider/${providerId}/profile`);
+}
+
+export function getCompare(providerIds: string[], metricIds: string[], year?: string) {
+  const params = new URLSearchParams({
+    provider_ids: providerIds.join(","),
+    metric_ids: metricIds.join(",")
+  });
+  if (year) params.set("year", year);
+  return getJson<FactRow[]>(`/compare?${params.toString()}`);
+}
+
+export function getTrends(metricId: string, providerId?: string, scope?: string) {
+  const params = new URLSearchParams({ metric_id: metricId });
+  if (providerId) params.set("provider_id", providerId);
+  if (scope) params.set("scope", scope);
+  return getJson<FactRow[]>(`/trends?${params.toString()}`);
+}
+
+export function getSources() {
+  return getJson<SourceFile[]>("/sources");
+}
+
+export function getQuality() {
+  return getJson<QualityCheck[]>("/quality?limit=100");
+}
