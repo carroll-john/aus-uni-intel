@@ -4,7 +4,7 @@ API_HOST := 127.0.0.1
 API_PORT := 8000
 WEB_PORT := 3000
 
-.PHONY: bootstrap web-install demo ingest-finance ingest-all test api web dev verify clean-db
+.PHONY: bootstrap web-install demo ingest-finance ingest-all test api web dev verify archive-db deploy-check clean-db
 
 .venv/.installed: pyproject.toml
 	python3 -m venv .venv
@@ -46,6 +46,14 @@ verify: bootstrap web-install ingest-all test
 	API_PID=$$!; \
 	sleep 2; \
 	cd apps/web && NEXT_PUBLIC_API_BASE_URL=http://$(API_HOST):$(API_PORT) npm run smoke
+
+archive-db:
+	test -f data/warehouse/university_intel.duckdb
+	gzip -c data/warehouse/university_intel.duckdb > data/warehouse/university_intel.duckdb.gz
+
+deploy-check: verify archive-db
+	git diff --check
+	@echo "Deployable state prepared. Commit data/warehouse/university_intel.duckdb.gz when data changed."
 
 clean-db:
 	rm -f data/warehouse/university_intel.duckdb data/warehouse/prototype_check.duckdb

@@ -31,10 +31,34 @@ Runs ingestion, Python tests, frontend build, starts the API, and checks require
 - Web app: <https://web-kohl-nine-76.vercel.app>
 - API: <https://you-are-building-a-public-data.vercel.app>
 
-The Vercel API deployment uses `api/index.py` as a FastAPI adapter. For local
-development it reads `data/warehouse/university_intel.duckdb`; for serverless
-deployments it can inflate `data/warehouse/university_intel.duckdb.gz` into
-`/tmp` when the local DuckDB file is not present.
+Deployment uses two native Vercel Git projects:
+
+- `aus-uni-intel-api`: root directory `.`, framework `Other`, uses
+  `api/index.py` and the repo-root `vercel.json`.
+- `aus-uni-intel-web`: root directory `apps/web`, framework `Next.js`, uses
+  `apps/web/vercel.json`.
+
+The web project should have `API_BASE_URL` set to the production API URL. The
+API deployment reads `data/warehouse/university_intel.duckdb.gz` and inflates it
+into `/tmp` in serverless environments. When ingestion changes deployed data,
+refresh and commit the archive before pushing:
+
+```bash
+make ingest-all
+make archive-db
+git add data/warehouse/university_intel.duckdb.gz
+git commit -m "Refresh warehouse archive"
+git push
+```
+
+For code/data release checks, run:
+
+```bash
+make deploy-check
+```
+
+There is intentionally no GitHub Actions deployment workflow. Vercel's native
+Git integration owns production deploys for both projects.
 
 ## Implemented Data Sources
 
@@ -42,9 +66,11 @@ deployments it can inflate `data/warehouse/university_intel.duckdb.gz` into
 - Department student section workbooks, 2018-2024: <https://www.education.gov.au/higher-education-statistics/student-data>
 - Department award course completions, 2018-2024 from the 2024 Section 14 workbook: <https://www.education.gov.au/higher-education-statistics/student-data>
 - HERDC research income time series: <https://www.education.gov.au/research-block-grants/resources/research-income-time-series>
-- QILT Student Experience Survey report tables, 2024: <https://qilt.edu.au/surveys/student-experience-survey-%28ses%29>
+- QILT Student Experience Survey report tables, 2021-2024: <https://qilt.edu.au/surveys/student-experience-survey-%28ses%29>
 
-QILT is parsed from the ODS file inside the published ZIP because the XLSX contains image-like report sheets.
+QILT is parsed from provider-level national report tables. The 2021 source is
+read from the XLSX inside the published ZIP; 2022-2024 are read from ODS files
+inside the published ZIPs.
 
 ## Project Structure
 
