@@ -28,6 +28,42 @@ def test_compare_defaults_to_one_canonical_scope_per_provider(tmp_path: Path, mo
     assert [row["value"] for row in rows] == [100.0, 200.0]
 
 
+def test_compare_rejects_too_many_providers(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    provider_ids = ",".join(f"provider_{index}" for index in range(api_main.MAX_COMPARE_PROVIDERS + 1))
+    response = client.get(
+        "/compare",
+        params={
+            "provider_ids": provider_ids,
+            "metric_ids": "finance_test_metric",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Too many providers or metrics"
+
+
+def test_compare_rejects_too_many_metrics(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    metric_ids = ",".join(f"metric_{index}" for index in range(api_main.MAX_COMPARE_METRICS + 1))
+    response = client.get(
+        "/compare",
+        params={
+            "provider_ids": "provider_a",
+            "metric_ids": metric_ids,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Too many providers or metrics"
+
+
 def test_compare_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
     monkeypatch.setattr(api_main, "DB_PATH", db_path)
@@ -239,6 +275,34 @@ def test_provider_metric_insight_returns_ranks_medians_changes_and_trend(
     }
     assert [row["reporting_year"] for row in payload["trend"]] == [2019, 2021, 2023, 2024]
     assert payload["source"]["source_url"] == "local://finance"
+
+
+def test_safe_float_handles_invalid_values() -> None:
+    assert api_main._safe_float("123.4") == 123.4
+    assert api_main._safe_float(None) is None
+    assert api_main._safe_float("not-a-number") is None
+
+
+def test_rank_for_value_skips_invalid_values() -> None:
+    rows = [
+        {"provider_id": "provider_a", "value": "bad"},
+        {"provider_id": "provider_b", "value": 200.0},
+    ]
+    rank = api_main._rank_for_value(rows, "provider_b")
+    assert rank == {"rank": 1, "of": 1, "value": 200.0}
+
+
+def test_sources_omits_local_path(tmp_path: Path, monkeypatch) -> None:
+    db_path = _build_compare_db(tmp_path)
+    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+
+    client = TestClient(api_main.app)
+    response = client.get("/sources")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload
+    assert "local_path" not in payload[0]
 
 
 def _build_compare_db(tmp_path: Path) -> Path:

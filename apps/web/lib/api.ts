@@ -56,7 +56,6 @@ export type SourceFile = {
   dataset_id: string;
   source_name: string;
   source_url: string;
-  local_path: string;
   file_format: string;
   reporting_year: number | null;
   downloaded_at: string;
@@ -153,10 +152,22 @@ export type MetricInsight = {
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
+export class ApiError extends Error {
+  status: number;
+  path: string;
+
+  constructor(path: string, status: number) {
+    super(`API ${path} failed with ${status}`);
+    this.name = "ApiError";
+    this.path = path;
+    this.status = status;
+  }
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`API ${path} failed with ${response.status}`);
+    throw new ApiError(path, response.status);
   }
   return response.json() as Promise<T>;
 }

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import argparse
-from html.parser import HTMLParser
 import json
-from pathlib import Path
 import re
 import urllib.request
+from html.parser import HTMLParser
+from pathlib import Path
 from urllib.parse import urljoin
 
 from uni_intel.config import (
@@ -18,6 +18,7 @@ from uni_intel.config import (
 )
 from uni_intel.db import connect, init_schema
 from uni_intel.ingestion.common import (
+    DOWNLOAD_TIMEOUT_SECONDS,
     QualityCheck,
     SourceDataset,
     SourceFileMetadata,
@@ -43,7 +44,6 @@ from uni_intel.ingestion.parsers.student import (
 )
 from uni_intel.ingestion.provider_matching import ProviderResolver
 from uni_intel.seed import seed_providers
-
 
 DATASET_ID = "education_student"
 SOURCE_LICENSE = "Australian Government Department of Education public data"
@@ -442,7 +442,7 @@ def source_extension(url: str) -> str:
 
 
 def find_link(page_url: str, predicate) -> str:
-    with urllib.request.urlopen(page_url) as response:
+    with urllib.request.urlopen(page_url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
         html = response.read().decode("utf-8", errors="replace")
     parser = LinkParser(page_url)
     parser.feed(html)

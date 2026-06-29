@@ -1,7 +1,7 @@
 import { RankingBarChart } from "@/components/ChartPanels";
 import { RankingTable } from "@/components/DataTable";
 import { getBenchmarks, getMetricCatalog, getMetrics, getProviders, getRankings } from "@/lib/api";
-import type { Metric, MetricCatalogItem, Provider } from "@/lib/api";
+import type { Metric, MetricCatalogItem } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +33,19 @@ export default async function RankingsPage({
   const rows = await getRankings(metricId, year, scope, 50, { missionGroup, state });
   const selected = metrics.find((metric) => metric.metric_id === metricId);
 
-  const benchmark = missionGroup
-    ? await getBenchmarks(metricId, { year, scope, groupBy: "mission_group", missionGroup })
-        .then((response) => response.rows.find((row) => row.group_value === missionGroup))
-        .catch(() => undefined)
-    : undefined;
+  let benchmark;
+  let benchmarkUnavailable = false;
+  if (missionGroup) {
+    try {
+      const response = await getBenchmarks(metricId, { year, scope, groupBy: "mission_group", missionGroup });
+      benchmark = response.rows.find((row) => row.group_value === missionGroup);
+    } catch (error) {
+      benchmarkUnavailable = true;
+      if (process.env.NODE_ENV !== "production") {
+        console.error(error);
+      }
+    }
+  }
   const benchmarkLine =
     benchmark && benchmark.provider_count > 0
       ? { value: benchmark.average, label: `${missionGroup} avg (${benchmark.provider_count})` }
@@ -89,6 +97,9 @@ export default async function RankingsPage({
           {catalogMode === "raw" ? "Use curated metrics" : "Advanced raw metrics"}
         </a>
       </div>
+      {benchmarkUnavailable ? (
+        <p className="text-sm text-amber">Benchmark unavailable for the selected mission group.</p>
+      ) : null}
       {selected ? (
         <div className="panel p-4 text-sm text-muted">
           <span className="font-medium text-ink">{selected.metric_name}</span> · {selected.definition}

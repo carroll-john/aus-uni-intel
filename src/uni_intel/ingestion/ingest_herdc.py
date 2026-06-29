@@ -28,7 +28,6 @@ from uni_intel.ingestion.parsers.herdc import HerdcRawRow, HerdcResearchIncomePa
 from uni_intel.ingestion.provider_matching import ProviderResolver
 from uni_intel.seed import seed_providers
 
-
 DATASET_ID = "education_herdc_research_income"
 SOURCE_LICENSE = "Australian Government Department of Education public data"
 METRIC_LINE_ITEMS = {str(metric["metric_id"]): str(metric["source_line_item"]) for metric in HERDC_METRICS}

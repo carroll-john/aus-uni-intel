@@ -3,8 +3,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import shutil
-import urllib.request
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -21,6 +19,7 @@ from uni_intel.config import (
     RAW_DIR,
 )
 from uni_intel.db import connect, init_schema
+from uni_intel.ingestion.common import download_file
 from uni_intel.ingestion.metrics import (
     SOURCE_AGENCY,
     finance_metric_record,
@@ -28,7 +27,6 @@ from uni_intel.ingestion.metrics import (
 from uni_intel.ingestion.parsers.finance import FinanceParser, FinanceRawRow
 from uni_intel.ingestion.provider_matching import ProviderResolver
 from uni_intel.seed import seed_providers
-
 
 SOURCE_LICENSE = "Australian Government Department of Education public data"
 
@@ -63,14 +61,6 @@ def default_raw_path(year: int, source_url: str) -> Path:
         / str(year)
         / f"finance_{year}_financial_reports_higher_education_providers.{extension}"
     )
-
-
-def download_file(url: str, destination: Path, force: bool = False) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if destination.exists() and not force:
-        return
-    with urllib.request.urlopen(url) as response, destination.open("wb") as handle:
-        shutil.copyfileobj(response, handle)
 
 
 def sha256_file(path: Path) -> str:

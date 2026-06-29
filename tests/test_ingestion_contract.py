@@ -5,13 +5,12 @@ from zipfile import ZipFile
 import duckdb
 from openpyxl import Workbook
 
-from uni_intel.ingestion.ingest_finance import ingest_finance
-from uni_intel.ingestion import ingest_student as ingest_student_module
-from uni_intel.ingestion import ingest_qilt as ingest_qilt_module
-from uni_intel.ingestion.common import upsert_metrics
-from uni_intel.ingestion.metrics import CALCULATED_METRICS
-from uni_intel.ingestion.metrics import STUDENT_METRICS
 from uni_intel.db import init_schema
+from uni_intel.ingestion import ingest_qilt as ingest_qilt_module
+from uni_intel.ingestion import ingest_student as ingest_student_module
+from uni_intel.ingestion.common import upsert_metrics
+from uni_intel.ingestion.ingest_finance import ingest_finance
+from uni_intel.ingestion.metrics import CALCULATED_METRICS, STUDENT_METRICS
 from uni_intel.seed import seed_providers
 
 

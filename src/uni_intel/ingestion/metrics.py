@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 
-
 SOURCE_AGENCY = "Australian Government Department of Education"
 FINANCE_SOURCE_DATASET = "Financial Reports of Higher Education Providers"
 FINANCE_SOURCE_TABLE = "Annual provider finance tables"

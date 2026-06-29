@@ -34,7 +34,22 @@ export default async function SectorOverviewPage({
   const query = await searchParams;
   const overview = await getOverview();
   const kpis = orderedKpis(overview.kpis);
-  const selectedKpi = selectedKpiFromQuery(kpis, query.metric_id);
+
+  if (kpis.length === 0) {
+    return (
+      <div className="space-y-6">
+        <OverviewHeader summary={overview.summary} />
+        <section className="panel p-6">
+          <h2 className="text-base font-semibold">No KPI data available</h2>
+          <p className="mt-2 text-sm text-muted">
+            The warehouse has no overview KPIs yet. Run ingestion to populate sector metrics.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
+  const selectedKpi = selectedKpiFromQuery(kpis, query.metric_id)!;
   const selectedScope = selectedKpi.dimension_scope;
   const [selectedRankings, selectedTrendRows] = await Promise.all([
     getRankings(selectedKpi.metric_id, String(selectedKpi.reporting_year), selectedScope, 10),
@@ -45,18 +60,7 @@ export default async function SectorOverviewPage({
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-normal">Sector overview</h1>
-          <p className="mt-1 text-sm text-muted">Canonical facts loaded from official public data sources.</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-xs text-muted sm:grid-cols-4">
-          <span className="rounded-md border border-line bg-white px-3 py-2">Providers {overview.summary.providers}</span>
-          <span className="rounded-md border border-line bg-white px-3 py-2">Metrics {overview.summary.metrics}</span>
-          <span className="rounded-md border border-line bg-white px-3 py-2">Facts {overview.summary.facts}</span>
-          <span className="rounded-md border border-line bg-white px-3 py-2">Sources {overview.summary.sources}</span>
-        </div>
-      </section>
+      <OverviewHeader summary={overview.summary} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
@@ -90,6 +94,23 @@ export default async function SectorOverviewPage({
         ))}
       </section>
     </div>
+  );
+}
+
+function OverviewHeader({ summary }: { summary: Awaited<ReturnType<typeof getOverview>>["summary"] }) {
+  return (
+    <section className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-normal">Sector overview</h1>
+        <p className="mt-1 text-sm text-muted">Canonical facts loaded from official public data sources.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs text-muted sm:grid-cols-4">
+        <span className="rounded-md border border-line bg-white px-3 py-2">Providers {summary.providers}</span>
+        <span className="rounded-md border border-line bg-white px-3 py-2">Metrics {summary.metrics}</span>
+        <span className="rounded-md border border-line bg-white px-3 py-2">Facts {summary.facts}</span>
+        <span className="rounded-md border border-line bg-white px-3 py-2">Sources {summary.sources}</span>
+      </div>
+    </section>
   );
 }
 

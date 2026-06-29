@@ -11,7 +11,6 @@ from uni_intel.ingestion.ingest_herdc import ingest_herdc
 from uni_intel.ingestion.ingest_qilt import ingest_qilt
 from uni_intel.ingestion.ingest_student import ingest_student
 
-
 DATASET_RUNNERS = {
     "student": lambda db_path, force: ingest_student(2024, db_path, force_download=force),
     "herdc": lambda db_path, force: ingest_herdc(db_path, force_download=force),

@@ -7,7 +7,6 @@ from typing import Iterable
 
 import duckdb
 
-
 _PUNCTUATION_RE = re.compile(r"[^a-z0-9]+")
 
 

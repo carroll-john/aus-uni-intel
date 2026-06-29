@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import gzip
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 from statistics import median
 
 import duckdb
@@ -25,6 +25,17 @@ METRIC_HISTORY_ALIASES = {
         LEGACY_OVERSEAS_FEE_INCOME_METRIC_ID,
     ],
 }
+MAX_COMPARE_PROVIDERS = 10
+MAX_COMPARE_METRICS = 10
+
+
+def _safe_float(value: object) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _connect() -> duckdb.DuckDBPyConnection:
@@ -119,7 +130,11 @@ def _canonical_scope_qualifier(scope: str | None, partition_columns: list[str]) 
 
 
 def _rank_for_value(rows: list[dict[str, object]], provider_id: str, order: str = "desc") -> dict[str, object] | None:
-    scoped_rows = [row for row in rows if row.get("value") is not None]
+    scoped_rows: list[dict[str, object]] = []
+    for row in rows:
+        value = _safe_float(row.get("value"))
+        if value is not None:
+            scoped_rows.append({**row, "value": value})
     current = next((row for row in scoped_rows if row["provider_id"] == provider_id), None)
     if current is None:
         return None
@@ -132,7 +147,7 @@ def _rank_for_value(rows: list[dict[str, object]], provider_id: str, order: str 
 
 
 def _median_for_rows(rows: list[dict[str, object]]) -> float | None:
-    values = [float(row["value"]) for row in rows if row.get("value") is not None]
+    values = [value for row in rows if (value := _safe_float(row.get("value"))) is not None]
     return float(median(values)) if values else None
 
 
@@ -153,8 +168,8 @@ def _rank_scope(
 
 
 def _change_payload(current_value: float, previous_row: dict[str, object]) -> dict[str, object] | None:
-    previous_value = float(previous_row["value"])
-    if previous_value == 0:
+    previous_value = _safe_float(previous_row.get("value"))
+    if previous_value is None or previous_value == 0:
         return None
     return {
         "year": int(previous_row["reporting_year"]),
@@ -503,7 +518,9 @@ def provider_metric_insight(
         if current is None:
             raise HTTPException(status_code=404, detail="No fact found for selected year")
 
-        current_value = float(current["value"])
+        current_value = _safe_float(current.get("value"))
+        if current_value is None:
+            raise HTTPException(status_code=500, detail="Invalid metric value")
         national_rows = _rank_scope(rows, provider_id, selected_year)
         mission_group = provider.get("mission_group")
         state = provider.get("state")
@@ -718,6 +735,8 @@ def compare(
     metric_list = [item.strip() for item in metric_ids.split(",") if item.strip()]
     if not provider_list or not metric_list:
         raise HTTPException(status_code=400, detail="provider_ids and metric_ids are required")
+    if len(provider_list) > MAX_COMPARE_PROVIDERS or len(metric_list) > MAX_COMPARE_METRICS:
+        raise HTTPException(status_code=400, detail="Too many providers or metrics")
 
     provider_placeholders = ", ".join("?" for _ in provider_list)
     query_metric_list = [alias for metric_id in metric_list for alias in _metric_ids_for_query(metric_id)]
@@ -765,7 +784,7 @@ def sources():
         return _rows_to_dicts(
             conn,
             """
-            SELECT source_file_id, dataset_id, source_name, source_url, local_path,
+            SELECT source_file_id, dataset_id, source_name, source_url,
                    file_format, reporting_year, downloaded_at, checksum_sha256,
                    row_count, license, publication_date, notes
             FROM source_files
