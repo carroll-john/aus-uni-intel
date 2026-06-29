@@ -16,6 +16,8 @@ export default async function ProvidersPage() {
           <thead className="bg-slate-50 text-xs uppercase text-muted">
             <tr>
               <th className="px-4 py-3">Provider</th>
+              <th className="px-4 py-3">Mission group</th>
+              <th className="px-4 py-3">Table</th>
               <th className="px-4 py-3">State</th>
               <th className="px-4 py-3">Website</th>
             </tr>
@@ -28,6 +30,8 @@ export default async function ProvidersPage() {
                     {provider.provider_name}
                   </Link>
                 </td>
+                <td className="px-4 py-3 text-muted">{provider.mission_group ?? "—"}</td>
+                <td className="px-4 py-3 text-muted">{provider.table_classification ?? "—"}</td>
                 <td className="px-4 py-3 text-muted">{provider.state}</td>
                 <td className="px-4 py-3 text-muted">{provider.website}</td>
               </tr>

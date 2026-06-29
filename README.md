@@ -69,6 +69,7 @@ tests/              Parser, matching, and ingestion-contract tests
 - `GET /metric-catalog`
 - `GET /provider/{provider_id}/profile`
 - `GET /rankings`
+- `GET /benchmarks`
 - `GET /compare`
 - `GET /trends`
 - `GET /years`
@@ -82,12 +83,30 @@ Examples:
 curl "http://127.0.0.1:8000/overview"
 curl "http://127.0.0.1:8000/metric-catalog"
 curl "http://127.0.0.1:8000/rankings?metric_id=herdc_research_income_total&year=2024&scope=HERDC&limit=10"
+curl "http://127.0.0.1:8000/rankings?metric_id=finance_international_students&year=2024&mission_group=Go8"
+curl "http://127.0.0.1:8000/benchmarks?metric_id=finance_international_students&year=2024&group_by=mission_group"
 curl "http://127.0.0.1:8000/trends?metric_id=student_total_enrolments&provider_id=university_of_sydney&scope=Student"
 ```
 
 `/metric-catalog` returns a curated, grouped metric list for product selectors. Use
 `/metric-catalog?include_missing=true` to include backlog metrics that are not
 available yet. `/metrics` remains the full raw metric catalogue for advanced use.
+
+`/rankings` accepts optional `mission_group` and `state` filters to rank within a
+peer set. `/benchmarks` returns peer-group averages for a metric (one row per
+group per year, using each provider's canonical scope), grouped by `mission_group`
+(default) or `state`; it powers the rankings reference line and the compare
+benchmark series.
+
+### Provider classification
+
+Each university carries a `mission_group` (Go8, ATN, RUN, 2050 Alliance, or
+Unaligned) and a `table_classification` (Table A / Table B under the Higher
+Education Support Act 2003). Mission-group membership is recorded as the current
+(June 2026) membership and back-cast across historical years; pre-membership
+years for a group therefore include institutions that joined later (e.g. Deakin
+and Newcastle in ATN, and the 2050 Alliance which launched in May 2026 as the
+successor to the Innovative Research Universities).
 
 ## Canonical Model
 

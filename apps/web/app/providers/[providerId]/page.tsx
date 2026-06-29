@@ -2,6 +2,7 @@ import { RankingTable } from "@/components/DataTable";
 import { TrendLineChart } from "@/components/ChartPanels";
 import { getMetricCatalog, getProfile, getRankings, getTrends } from "@/lib/api";
 import type { FactRow, MetricCatalogItem } from "@/lib/api";
+import type { ReactNode } from "react";
 import { formatValue, groupBy } from "@/lib/format";
 import Link from "next/link";
 
@@ -36,6 +37,11 @@ export default async function ProviderProfilePage({
         <div>
           <h1 className="text-2xl font-semibold">{profile.provider.provider_name}</h1>
           <p className="mt-1 text-sm text-muted">{profile.provider.state} · Public university profile</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {profile.provider.mission_group ? <Badge>{profile.provider.mission_group}</Badge> : null}
+            {profile.provider.table_classification ? <Badge>{profile.provider.table_classification}</Badge> : null}
+            {profile.provider.state ? <Badge>{profile.provider.state}</Badge> : null}
+          </div>
         </div>
         <a className="rounded-md border border-line bg-white px-3 py-2 text-sm" href={profile.provider.website ?? "#"}>
           Provider website
@@ -86,6 +92,14 @@ export default async function ProviderProfilePage({
         ))}
       </section>
     </div>
+  );
+}
+
+function Badge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-md border border-line bg-slate-50 px-2 py-0.5 text-xs font-medium text-muted">
+      {children}
+    </span>
   );
 }
 

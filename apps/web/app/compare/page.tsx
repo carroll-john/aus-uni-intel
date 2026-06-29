@@ -1,13 +1,15 @@
 import { CompareBarChart, MultiProviderTrendChart } from "@/components/ChartPanels";
 import { CompareControls } from "@/components/CompareControls";
 import type { SelectableMetric } from "@/components/CompareControls";
-import { getCompare, getMetricCatalog, getMetrics, getProviders, getTrends } from "@/lib/api";
+import { getBenchmarks, getCompare, getMetricCatalog, getMetrics, getProviders, getTrends } from "@/lib/api";
+import type { BenchmarkRow, FactRow } from "@/lib/api";
 import { formatValue } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 const defaultProviders = ["university_of_sydney", "university_of_melbourne", "monash_university"];
 const defaultMetric = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation";
+const benchmarkKeyPrefix = "benchmark:";
 
 export default async function ComparePage({
   searchParams
@@ -21,36 +23,56 @@ export default async function ComparePage({
     catalogMode === "raw" ? getMetrics() : getMetricCatalog()
   ]);
   const metrics = selectableMetrics(metricRows);
+  const universities = providers.filter((provider) => provider.provider_type === "university");
+  const missionGroups = new Set(universities.map((provider) => provider.mission_group).filter(Boolean) as string[]);
   const selectedProviders = many(query.providers, defaultProviders).slice(0, 5);
   const requestedMetric = many(query.metrics, [defaultMetric])[0] ?? defaultMetric;
   const selectedMetric = metrics.some((metric) => metric.metric_id === requestedMetric) ? requestedMetric : defaultMetric;
   const year = one(query.year) ?? "2024";
-  const [rows, trendGroups] = await Promise.all([
+  const benchmarkGroup = missionGroups.has(one(query.benchmark) ?? "") ? (one(query.benchmark) as string) : "";
+
+  const [rows, trendGroups, benchmark] = await Promise.all([
     getCompare(selectedProviders, [selectedMetric], year),
-    Promise.all(selectedProviders.map((providerId) => getTrends(selectedMetric, providerId)))
+    Promise.all(selectedProviders.map((providerId) => getTrends(selectedMetric, providerId))),
+    benchmarkGroup
+      ? getBenchmarks(selectedMetric, { groupBy: "mission_group", missionGroup: benchmarkGroup }).catch(() => undefined)
+      : Promise.resolve(undefined)
   ]);
   const trendRows = trendGroups.flat();
+
+  const benchmarkRows = benchmark?.rows ?? [];
+  const benchmarkBar = benchmarkRows.find((row) => String(row.reporting_year) === year);
+  const compareRows = benchmarkBar ? [...rows, benchmarkFact(benchmarkGroup, benchmarkBar)] : rows;
+  const trendWithBenchmark = benchmarkRows.length
+    ? [...trendRows, ...benchmarkRows.map((row) => benchmarkFact(benchmarkGroup, row))]
+    : trendRows;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold">Compare</h1>
-        <p className="mt-1 text-sm text-muted">Compare multiple providers for one metric and reporting year.</p>
+        <p className="mt-1 text-sm text-muted">
+          Compare multiple providers for one metric and reporting year. Filter the picker by mission group or state, and
+          overlay a peer-group average as a benchmark.
+        </p>
       </div>
       <CompareControls
         metrics={metrics}
         catalogMode={catalogMode}
-        providers={providers.filter((provider) => provider.provider_type === "university")}
+        providers={universities}
         selectedMetricId={selectedMetric}
         selectedProviderIds={selectedProviders}
+        selectedBenchmark={benchmarkGroup}
         year={year}
       />
       <section className="panel p-4">
         <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
           <h2 className="text-base font-semibold">Metric history</h2>
-          <p className="text-sm text-muted">Available source years for the selected providers and metric.</p>
+          <p className="text-sm text-muted">
+            {benchmarkGroup ? `Dashed grey line: ${benchmarkGroup} average.` : "Available source years for the selected providers and metric."}
+          </p>
         </div>
-        <MultiProviderTrendChart rows={trendRows} />
+        <MultiProviderTrendChart rows={trendWithBenchmark} />
       </section>
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="panel p-4">
@@ -58,7 +80,7 @@ export default async function ComparePage({
             <h2 className="text-base font-semibold">{year} comparison</h2>
             <p className="text-sm text-muted">Canonical scope per provider</p>
           </div>
-          <CompareBarChart rows={rows} />
+          <CompareBarChart rows={compareRows} />
         </div>
         <div className="panel overflow-hidden">
           <table className="w-full border-collapse text-left text-sm">
@@ -70,7 +92,7 @@ export default async function ComparePage({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {compareRows.map((row) => (
                 <tr className="border-t border-line" key={`${row.provider_id}-${row.metric_id}-${row.dimension_scope}`}>
                   <td className="px-3 py-2 font-medium">{row.provider_name}</td>
                   <td className="px-3 py-2 text-muted">{row.metric_name}</td>
@@ -83,6 +105,19 @@ export default async function ComparePage({
       </section>
     </div>
   );
+}
+
+function benchmarkFact(group: string, row: BenchmarkRow): FactRow {
+  return {
+    provider_id: `${benchmarkKeyPrefix}${group}`,
+    provider_name: `${group} average`,
+    metric_id: "benchmark",
+    metric_name: `${group} average`,
+    reporting_year: row.reporting_year,
+    dimension_scope: "Group average",
+    value: row.average,
+    unit: row.unit
+  };
 }
 
 function one(value: string | string[] | undefined) {
