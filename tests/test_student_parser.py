@@ -2,7 +2,12 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from uni_intel.ingestion.parsers.student import StudentCompletionsParser, StudentSectionParser, StudentSummaryParser
+from uni_intel.ingestion.parsers.student import (
+    StudentCompletionsParser,
+    StudentMetricColumn,
+    StudentSectionParser,
+    StudentSummaryParser,
+)
 
 
 def test_student_summary_parser_reads_provider_metrics(tmp_path: Path) -> None:
@@ -77,6 +82,53 @@ def test_student_section_parser_reads_provider_total_and_skips_summary_rows(tmp_
     assert rows[0].dimensions["student_population"] == "Commencing Students"
 
 
+def test_student_section_parser_reads_postgraduate_level_metrics(tmp_path: Path) -> None:
+    source = _section_workbook(
+        tmp_path,
+        sheet_name="2.5",
+        title="Table 2.5: All Students by State, Higher Education Institution and Broad Level of Course, 2024",
+        total_column_name="Total",
+    )
+
+    rows = StudentSectionParser(
+        year=2024,
+        section=2,
+        sheet_name="2.5",
+        metric_id="student_total_enrolments",
+        population="All Students",
+        total_column_name="Total",
+        metric_columns=(
+            StudentMetricColumn(
+                "student_postgraduate_research_enrolments",
+                "Postgraduate by Research",
+                ("Postgraduate by Research",),
+                "Postgraduate by Research",
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_coursework_enrolments",
+                "Postgraduate by Coursework",
+                ("Postgraduate by Coursework",),
+                "Postgraduate by Coursework",
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_total_enrolments",
+                "Postgraduate",
+                ("Postgraduate by Research", "Postgraduate by Coursework"),
+                "Postgraduate by Research + Postgraduate by Coursework",
+            ),
+        ),
+    ).parse(source)
+
+    assert {row.metric_id for row in rows} == {
+        "student_postgraduate_research_enrolments",
+        "student_postgraduate_coursework_enrolments",
+        "student_postgraduate_total_enrolments",
+    }
+    assert {row.metric_id: row.numeric_value for row in rows}[
+        "student_postgraduate_total_enrolments"
+    ] == 3
+
+
 def test_student_section_parser_reads_total_eftsl_column(tmp_path: Path) -> None:
     source = _section_workbook(
         tmp_path,
@@ -119,6 +171,46 @@ def test_student_section_parser_reads_all_load_total_column(tmp_path: Path) -> N
     assert len(rows) == 1
     assert rows[0].metric_id == "student_total_load_eftsl"
     assert rows[0].numeric_value == 28783
+
+
+def test_student_completions_parser_reads_postgraduate_level_metrics(tmp_path: Path) -> None:
+    workbook = Workbook()
+    default = workbook.active
+    workbook.remove(default)
+    ws = workbook.create_sheet("14.8")
+    ws.append([])
+    ws.append(
+        [
+            "Table 14.8: Award Course Completions for All Students by State, Higher Education Institution and Broad Level of Course, 2024"
+        ]
+    )
+    ws.append(
+        [
+            "State",
+            "Institution",
+            "Postgraduate by Research",
+            "Postgraduate by Coursework",
+            "Bachelor",
+            "Total(2.03)",
+        ]
+    )
+    ws.append(["Victoria", "Monash University", 100, 120, 500, 720])
+    path = tmp_path / "completions_level.xlsx"
+    workbook.save(path)
+
+    rows = StudentCompletionsParser(
+        year=2024,
+        parse_total_time_series=False,
+        parse_level_metrics=True,
+    ).parse(path)
+
+    assert {row.metric_id for row in rows} == {
+        "student_postgraduate_research_completions",
+        "student_postgraduate_coursework_completions",
+    }
+    assert {row.metric_id: row.numeric_value for row in rows}[
+        "student_postgraduate_coursework_completions"
+    ] == 120
 
 
 def _section_workbook(tmp_path: Path, sheet_name: str, title: str, total_column_name: str) -> Path:

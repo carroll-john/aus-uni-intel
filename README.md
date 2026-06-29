@@ -64,7 +64,7 @@ Git integration owns production deploys for both projects.
 
 - Department of Education finance tables, 2018-2024: <https://www.education.gov.au/collections/financial-reports-higher-education-providers>
 - Department student section workbooks, 2018-2024: <https://www.education.gov.au/higher-education-statistics/student-data>
-- Department award course completions, 2018-2024 from the 2024 Section 14 workbook: <https://www.education.gov.au/higher-education-statistics/student-data>
+- Department award course completions and postgraduate research/coursework completion buckets, 2018-2024 from annual Section 14 workbooks: <https://www.education.gov.au/higher-education-statistics/student-data>
 - HERDC research income time series: <https://www.education.gov.au/research-block-grants/resources/research-income-time-series>
 - QILT Student Experience Survey report tables, 2021-2024: <https://qilt.edu.au/surveys/student-experience-survey-%28ses%29>
 
@@ -111,7 +111,7 @@ curl "http://127.0.0.1:8000/metric-catalog"
 curl "http://127.0.0.1:8000/rankings?metric_id=herdc_research_income_total&year=2024&scope=HERDC&limit=10"
 curl "http://127.0.0.1:8000/rankings?metric_id=finance_international_students&year=2024&mission_group=Go8"
 curl "http://127.0.0.1:8000/benchmarks?metric_id=finance_international_students&year=2024&group_by=mission_group"
-curl "http://127.0.0.1:8000/trends?metric_id=student_total_enrolments&provider_id=university_of_sydney&scope=Student"
+curl "http://127.0.0.1:8000/trends?metric_id=student_postgraduate_total_enrolments&provider_id=university_of_sydney&scope=Student"
 ```
 
 `/metric-catalog` returns a curated, grouped metric list for product selectors. Use
@@ -168,7 +168,8 @@ catalogue remains available through the “Advanced raw metrics” mode.
 
 - Provider scope is intentionally public universities plus a sector aggregate; private/special providers are filtered out of provider-level student section loads.
 - Finance history currently uses Department XLSX workbooks for 2018-2021 and CSV extracts for 2022-2024.
-- Student data currently covers provider-level enrolments, EFTSL/load, and award course completions for 2018-2024.
+- Student data currently covers provider-level enrolments, postgraduate research/coursework enrolments, EFTSL/load, and award course completions for 2018-2024.
+- No consistent national provider-level public source is currently selected for postgraduate applications/offers. Commencing postgraduate enrolments are included as the available demand proxy.
 - QILT currently ingests provider-level SES undergraduate and postgraduate coursework institution tables with 90% confidence intervals.
 - Some npm audit output currently flags Next.js bundled PostCSS; npm’s available fix is a breaking downgrade, so the app stays on the current supported Next.js release.
 

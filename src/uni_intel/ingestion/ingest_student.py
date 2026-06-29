@@ -37,6 +37,7 @@ from uni_intel.ingestion.common import (
 from uni_intel.ingestion.metrics import SOURCE_AGENCY, STUDENT_METRICS, STUDENT_SOURCE_DATASET
 from uni_intel.ingestion.parsers.student import (
     StudentCompletionsParser,
+    StudentMetricColumn,
     StudentRawRow,
     StudentSectionParser,
 )
@@ -55,6 +56,65 @@ SECTION_SPECS = {
         "population": "Commencing Students",
         "total_column": "Total",
         "source_label": "Commencing students",
+        "metric_columns": (
+            StudentMetricColumn(
+                "student_commencing_enrolments",
+                "Commencing Students",
+                ("Total",),
+                "Total",
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_research_commencing_enrolments",
+                "Commencing Postgraduate by Research",
+                ("Postgraduate by Research",),
+                "Postgraduate by Research",
+                (("Doctorate by Research", "Master's by Research"), ("Doctorate by Research", "Masters by Research")),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_coursework_commencing_enrolments",
+                "Commencing Postgraduate by Coursework",
+                ("Postgraduate by Coursework",),
+                "Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_total_commencing_enrolments",
+                "Commencing Postgraduate",
+                ("Postgraduate by Research", "Postgraduate by Coursework"),
+                "Postgraduate by Research + Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Research",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Research",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+        ),
     },
     2: {
         "slug": "all_students",
@@ -63,6 +123,65 @@ SECTION_SPECS = {
         "population": "All Students",
         "total_column": "Total",
         "source_label": "All students",
+        "metric_columns": (
+            StudentMetricColumn(
+                "student_total_enrolments",
+                "All Students",
+                ("Total",),
+                "Total",
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_research_enrolments",
+                "Postgraduate by Research",
+                ("Postgraduate by Research",),
+                "Postgraduate by Research",
+                (("Doctorate by Research", "Master's by Research"), ("Doctorate by Research", "Masters by Research")),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_coursework_enrolments",
+                "Postgraduate by Coursework",
+                ("Postgraduate by Coursework",),
+                "Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_total_enrolments",
+                "Postgraduate",
+                ("Postgraduate by Research", "Postgraduate by Coursework"),
+                "Postgraduate by Research + Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Research",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Research",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+        ),
     },
     3: {
         "slug": "commencing_student_load",
@@ -71,6 +190,14 @@ SECTION_SPECS = {
         "population": "Commencing Students EFTSL",
         "total_column": "Total EFTSL",
         "source_label": "Commencing student load",
+        "metric_columns": (
+            StudentMetricColumn(
+                "student_commencing_load_eftsl",
+                "Commencing Students EFTSL",
+                ("Total EFTSL",),
+                "Total",
+            ),
+        ),
     },
     4: {
         "slug": "all_student_load",
@@ -79,9 +206,68 @@ SECTION_SPECS = {
         "population": "All Students EFTSL",
         "total_column": "Total",
         "source_label": "All student load",
+        "metric_columns": (
+            StudentMetricColumn(
+                "student_total_load_eftsl",
+                "All Students EFTSL",
+                ("Total",),
+                "Total",
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_research_load_eftsl",
+                "Postgraduate by Research EFTSL",
+                ("Postgraduate by Research",),
+                "Postgraduate by Research",
+                (("Doctorate by Research", "Master's by Research"), ("Doctorate by Research", "Masters by Research")),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_coursework_load_eftsl",
+                "Postgraduate by Coursework EFTSL",
+                ("Postgraduate by Coursework",),
+                "Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+            StudentMetricColumn(
+                "student_postgraduate_total_load_eftsl",
+                "Postgraduate EFTSL",
+                ("Postgraduate by Research", "Postgraduate by Coursework"),
+                "Postgraduate by Research + Postgraduate by Coursework",
+                (
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Master's (Extended)",
+                        "Master's by Research",
+                        "Master's by Coursework",
+                        "Other Postgraduate",
+                    ),
+                    (
+                        "Doctorate by Research",
+                        "Doctorate by Coursework",
+                        "Masters (Extended)",
+                        "Masters by Research",
+                        "Masters by Coursework",
+                        "Other Postgraduate",
+                    ),
+                ),
+            ),
+        ),
     },
 }
-HISTORICAL_STUDENT_METRICS = {str(spec["metric_id"]) for spec in SECTION_SPECS.values()}
+HISTORICAL_STUDENT_METRICS = {str(metric["metric_id"]) for metric in STUDENT_METRICS}
 
 
 def ingest_student(
@@ -128,11 +314,11 @@ def ingest_student(
                     url,
                     raw_path,
                     raw_path.suffix.lstrip("."),
-                    parser.year if isinstance(parser, StudentSectionParser) else year,
+                    source_reporting_year(parser, year),
                     checksum,
                     len(rows),
                     SOURCE_LICENSE,
-                    str(parser.year) if isinstance(parser, StudentSectionParser) else "2024",
+                    str(source_reporting_year(parser, year)),
                     "Department student statistics Excel workbook.",
                 ),
             )
@@ -198,21 +384,41 @@ def build_student_sources() -> list[tuple[str, str, Path, object, str]]:
                         metric_id=str(spec["metric_id"]),
                         population=str(spec["population"]),
                         total_column_name=str(spec["total_column"]),
+                        metric_columns=tuple(spec.get("metric_columns", ())),
                     ),
                     f"{source_year} Section {section} - {spec['source_label']}",
                 )
             )
 
-    sources.append(
-        (
-            "student_completions_2024",
-            STUDENT_COMPLETIONS_2024_URL,
-            RAW_DIR / "student" / "2024" / "student_completions_2024.xlsx",
-            StudentCompletionsParser(),
-            "2024 Section 14 Award Course Completions",
+    for source_year in STUDENT_SECTION_YEARS:
+        source_url = (
+            STUDENT_COMPLETIONS_2024_URL
+            if source_year == 2024
+            else resolve_student_section_xlsx_url(source_year, 14)
         )
-    )
+        file_extension = source_extension(source_url)
+        sources.append(
+            (
+                f"student_{source_year}_section_14_completions",
+                source_url,
+                RAW_DIR
+                / "student"
+                / str(source_year)
+                / f"section_14_completions_{source_year}.{file_extension}",
+                StudentCompletionsParser(
+                    year=source_year,
+                    parse_total_time_series=source_year == 2024,
+                    parse_level_metrics=True,
+                ),
+                f"{source_year} Section 14 - Award course completions",
+            )
+        )
     return sources
+
+
+def source_reporting_year(parser: object, default_year: int) -> int:
+    parser_year = getattr(parser, "year", None)
+    return parser_year if isinstance(parser_year, int) else default_year
 
 
 def resolve_student_section_xlsx_url(year: int, section: int) -> str:
@@ -280,16 +486,11 @@ class LinkParser(HTMLParser):
 
 
 def purge_existing_student_facts(conn) -> None:
+    metric_ids = ", ".join(f"'{metric_id}'" for metric_id in sorted(HISTORICAL_STUDENT_METRICS))
     conn.execute(
-        """
+        f"""
         DELETE FROM facts
-        WHERE metric_id IN (
-            'student_commencing_enrolments',
-            'student_total_enrolments',
-            'student_commencing_load_eftsl',
-            'student_total_load_eftsl',
-            'student_award_course_completions'
-        )
+        WHERE metric_id IN ({metric_ids})
           AND source_file_id IN (
               SELECT source_file_id
               FROM source_files
