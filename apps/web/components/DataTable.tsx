@@ -4,8 +4,8 @@ import { formatValue } from "@/lib/format";
 
 export function RankingTable({ rows }: { rows: FactRow[] }) {
   return (
-    <div className="overflow-hidden rounded-md border border-line">
-      <table className="w-full border-collapse text-left text-sm">
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table className="min-w-[640px] w-full border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-xs uppercase text-muted">
           <tr>
             <th className="px-3 py-2">Rank</th>
