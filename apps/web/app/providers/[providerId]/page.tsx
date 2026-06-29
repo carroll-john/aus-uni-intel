@@ -3,26 +3,31 @@ import { TrendLineChart } from "@/components/ChartPanels";
 import { getMetricCatalog, getProfile, getRankings, getTrends } from "@/lib/api";
 import type { FactRow, MetricCatalogItem } from "@/lib/api";
 import { formatValue, groupBy } from "@/lib/format";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const profileTrendMetric = "student_total_enrolments";
-
-export default async function ProviderProfilePage({ params }: { params: Promise<{ providerId: string }> }) {
+export default async function ProviderProfilePage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ providerId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { providerId } = await params;
-  const [profile, catalog, trend, revenuePeers] = await Promise.all([
+  const query = await searchParams;
+  const [profile, catalog] = await Promise.all([
     getProfile(providerId),
-    getMetricCatalog(),
-    getTrends(profileTrendMetric, providerId, "Student"),
-    getRankings(
-      "finance_total_revenues_from_continuing_operations_including_deferred_superannuation",
-      "2024",
-      "Total Institution",
-      8
-    )
+    getMetricCatalog()
   ]);
   const latestYear = Math.max(...profile.facts.map((fact) => fact.reporting_year));
   const latestFacts = curatedLatestFacts(profile.facts, catalog, latestYear);
+  const kpiFacts = summaryFacts(latestFacts);
+  const selectedFact = selectedFactFromQuery(kpiFacts, query.metric_id);
+  const [trend, peerRankings] = await Promise.all([
+    getTrends(selectedFact.metric_id, providerId, selectedFact.dimension_scope),
+    getRankings(selectedFact.metric_id, String(selectedFact.reporting_year), selectedFact.dimension_scope, 8)
+  ]);
   const grouped = groupBy(latestFacts, (fact) => fact.metric_group ?? "Metrics");
 
   return (
@@ -38,23 +43,30 @@ export default async function ProviderProfilePage({ params }: { params: Promise<
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summaryFacts(latestFacts).map((fact) => (
-          <div className="panel p-4" key={fact.metric_id}>
-            <div className="text-xs font-medium uppercase text-muted">{fact.metric_name}</div>
-            <div className="mt-2 text-2xl font-semibold">{formatValue(fact.value, fact.unit)}</div>
-            <div className="mt-1 text-xs text-muted">{fact.reporting_year} · {fact.dimension_scope}</div>
-          </div>
+        {kpiFacts.map((fact) => (
+          <KpiLink
+            fact={fact}
+            href={`/providers/${providerId}?metric_id=${encodeURIComponent(fact.metric_id)}`}
+            isActive={fact.metric_id === selectedFact.metric_id}
+            key={fact.metric_id}
+          />
         ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="panel min-w-0 p-4">
-          <h2 className="mb-3 text-base font-semibold">Student trend</h2>
-          <TrendLineChart rows={trend} />
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <h2 className="text-base font-semibold">{selectedFact.metric_name} trend</h2>
+            <span className="text-xs text-muted">{profile.provider.provider_name}</span>
+          </div>
+          <TrendLineChart rows={trend.filter((row) => row.reporting_year >= 2018)} />
         </div>
         <div className="panel min-w-0 p-4">
-          <h2 className="mb-3 text-base font-semibold">Revenue peer ranking</h2>
-          <RankingTable rows={revenuePeers} />
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <h2 className="text-base font-semibold">Top providers by {selectedFact.metric_name.toLowerCase()}</h2>
+            <span className="text-xs text-muted">{selectedFact.reporting_year} · {selectedFact.dimension_scope}</span>
+          </div>
+          <RankingTable rows={peerRankings} />
         </div>
       </section>
 
@@ -74,6 +86,22 @@ export default async function ProviderProfilePage({ params }: { params: Promise<
         ))}
       </section>
     </div>
+  );
+}
+
+function KpiLink({ fact, href, isActive }: { fact: FactRow; href: string; isActive: boolean }) {
+  return (
+    <Link
+      aria-current={isActive ? "true" : undefined}
+      className={`panel block p-4 transition hover:-translate-y-0.5 hover:border-teal hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal ${
+        isActive ? "border-teal bg-teal/5" : ""
+      }`}
+      href={href}
+    >
+      <div className="text-xs font-medium uppercase text-muted">{fact.metric_name}</div>
+      <div className="mt-2 text-2xl font-semibold">{formatValue(fact.value, fact.unit)}</div>
+      <div className="mt-1 text-xs text-muted">{fact.reporting_year} · {fact.dimension_scope}</div>
+    </Link>
   );
 }
 
@@ -120,4 +148,9 @@ function summaryFacts(facts: FactRow[]) {
   ];
   const byMetricId = new Map(facts.map((fact) => [fact.metric_id, fact]));
   return summaryMetricIds.map((metricId) => byMetricId.get(metricId)).filter((fact): fact is FactRow => Boolean(fact));
+}
+
+function selectedFactFromQuery(facts: FactRow[], metricId: string | string[] | undefined) {
+  const selectedMetricId = Array.isArray(metricId) ? metricId[0] : metricId;
+  return facts.find((fact) => fact.metric_id === selectedMetricId) ?? facts[0];
 }

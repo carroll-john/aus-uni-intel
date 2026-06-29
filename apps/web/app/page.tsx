@@ -3,19 +3,24 @@ import { RankingTable } from "@/components/DataTable";
 import { getOverview, getRankings, getTrends } from "@/lib/api";
 import type { FactRow } from "@/lib/api";
 import { formatValue, groupBy } from "@/lib/format";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const revenueMetric = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation";
-const trendMetric = "student_total_enrolments";
-
-export default async function SectorOverviewPage() {
-  const [overview, revenueRankings, enrolmentRows] = await Promise.all([
-    getOverview(),
-    getRankings(revenueMetric, "2024", "Total Institution", 10),
-    getTrends(trendMetric, undefined, "Student")
+export default async function SectorOverviewPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const overview = await getOverview();
+  const selectedKpi = selectedKpiFromQuery(overview.kpis, query.metric_id);
+  const selectedScope = selectedKpi.dimension_scope;
+  const [selectedRankings, selectedTrendRows] = await Promise.all([
+    getRankings(selectedKpi.metric_id, String(selectedKpi.reporting_year), selectedScope, 10),
+    getTrends(selectedKpi.metric_id, undefined, selectedScope)
   ]);
-  const sectorTrend = aggregateSectorTrend(enrolmentRows);
+  const selectedTrend = aggregateSectorTrend(selectedTrendRows, selectedKpi.unit);
   const grouped = groupBy(overview.top_rankings, (row) => row.metric_name);
 
   return (
@@ -35,34 +40,30 @@ export default async function SectorOverviewPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overview.kpis.map((kpi) => (
-          <div className="panel p-4" key={kpi.metric_id}>
-            <div className="text-xs font-medium uppercase text-muted">{kpi.metric_name}</div>
-            <div className="mt-2 text-2xl font-semibold">{formatValue(kpi.value, kpi.unit)}</div>
-            <div className="mt-1 text-xs text-muted">{kpi.reporting_year} · {kpi.dimension_scope}</div>
-          </div>
+          <KpiLink fact={kpi} href={`/?metric_id=${encodeURIComponent(kpi.metric_id)}`} isActive={kpi.metric_id === selectedKpi.metric_id} key={kpi.metric_id} />
         ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="panel p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Top revenue providers</h2>
-            <span className="text-xs text-muted">Finance 2024</span>
+        <div className="panel min-w-0 p-4">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <h2 className="text-base font-semibold">Top providers by {selectedKpi.metric_name.toLowerCase()}</h2>
+            <span className="text-xs text-muted">{selectedKpi.reporting_year} · {selectedScope}</span>
           </div>
-          <RankingBarChart rows={revenueRankings} />
+          <RankingBarChart rows={selectedRankings} />
         </div>
-        <div className="panel p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Student enrolment trend</h2>
+        <div className="panel min-w-0 p-4">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <h2 className="text-base font-semibold">{selectedKpi.metric_name} trend</h2>
             <span className="text-xs text-muted">Public university sector</span>
           </div>
-          <TrendLineChart rows={sectorTrend} />
+          <TrendLineChart rows={selectedTrend} />
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-3">
         {Object.entries(grouped).map(([metric, rows]) => (
-          <div className="panel p-4" key={metric}>
+          <div className="panel min-w-0 p-4" key={metric}>
             <h2 className="mb-3 text-base font-semibold">{metric}</h2>
             <RankingTable rows={rows} />
           </div>
@@ -72,25 +73,60 @@ export default async function SectorOverviewPage() {
   );
 }
 
-function aggregateSectorTrend(rows: FactRow[]): FactRow[] {
-  const byYear = new Map<number, FactRow>();
+function KpiLink({ fact, href, isActive }: { fact: FactRow; href: string; isActive: boolean }) {
+  return (
+    <Link
+      aria-current={isActive ? "true" : undefined}
+      className={`panel block p-4 transition hover:-translate-y-0.5 hover:border-teal hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal ${
+        isActive ? "border-teal bg-teal/5" : ""
+      }`}
+      href={href}
+    >
+      <div className="text-xs font-medium uppercase text-muted">{fact.metric_name}</div>
+      <div className="mt-2 text-2xl font-semibold">{formatValue(fact.value, fact.unit)}</div>
+      <div className="mt-1 text-xs text-muted">{fact.reporting_year} · {fact.dimension_scope}</div>
+    </Link>
+  );
+}
 
-  for (const row of rows) {
+function selectedKpiFromQuery(kpis: FactRow[], metricId: string | string[] | undefined) {
+  const selectedMetricId = Array.isArray(metricId) ? metricId[0] : metricId;
+  return kpis.find((kpi) => kpi.metric_id === selectedMetricId) ?? kpis[0];
+}
+
+function aggregateSectorTrend(rows: FactRow[], unit?: string): FactRow[] {
+  const recentRows = rows.filter((row) => row.reporting_year >= 2018);
+  const sectorRows = recentRows.filter((row) => row.provider_id === "sector_all_pub2");
+  if (sectorRows.length && unit !== "percent") {
+    return sectorRows.sort((a, b) => a.reporting_year - b.reporting_year);
+  }
+
+  const byYear = new Map<number, { count: number; row: FactRow }>();
+
+  for (const row of recentRows) {
     if (row.provider_id === "sector_all_pub2") continue;
-
     const existing = byYear.get(row.reporting_year);
     if (existing) {
-      existing.value += row.value;
+      existing.count += 1;
+      existing.row.value += row.value;
       continue;
     }
 
     byYear.set(row.reporting_year, {
-      ...row,
-      provider_id: "public_university_sector",
-      provider_name: "Public university sector",
-      value: row.value
+      count: 1,
+      row: {
+        ...row,
+        provider_id: "public_university_sector",
+        provider_name: "Public university sector",
+        value: row.value
+      }
     });
   }
 
-  return Array.from(byYear.values()).sort((a, b) => a.reporting_year - b.reporting_year);
+  return Array.from(byYear.values())
+    .map(({ count, row }) => ({
+      ...row,
+      value: unit === "percent" && count ? row.value / count : row.value
+    }))
+    .sort((a, b) => a.reporting_year - b.reporting_year);
 }
