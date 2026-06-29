@@ -28,7 +28,6 @@ from uni_intel.ingestion.parsers.qilt import QiltRawRow, QiltSesParser
 from uni_intel.ingestion.provider_matching import ProviderResolver
 from uni_intel.seed import seed_providers
 
-
 DATASET_ID_PREFIX = "qilt_ses"
 SOURCE_LICENSE = "QILT public report tables"
 METRIC_LINE_ITEMS = {str(metric["metric_id"]): str(metric["source_line_item"]) for metric in QILT_METRICS}

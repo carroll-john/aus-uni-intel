@@ -1,10 +1,12 @@
 import { RankingTable } from "@/components/DataTable";
 import { TrendLineChart } from "@/components/ChartPanels";
-import { getMetricCatalog, getMetricInsight, getProfile, getRankings, getTrends } from "@/lib/api";
-import type { FactRow, MetricCatalogItem, MetricInsight, MetricInsightRank } from "@/lib/api";
+import { getMetricCatalog, getMetricInsight, getProfile, getRankings, getTrends, ApiError } from "@/lib/api";
+import type { FactRow, MetricCatalogItem, MetricInsight, MetricInsightRank, Provider } from "@/lib/api";
 import type { ReactNode } from "react";
 import { formatValue, groupBy } from "@/lib/format";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { SafeExternalLink } from "@/components/SafeExternalLink";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +19,36 @@ export default async function ProviderProfilePage({
 }) {
   const { providerId } = await params;
   const query = await searchParams;
-  const [profile, catalog] = await Promise.all([
-    getProfile(providerId),
-    getMetricCatalog()
-  ]);
-  const latestYear = Math.max(...profile.facts.map((fact) => fact.reporting_year));
-  const latestFacts = curatedLatestFacts(profile.facts, catalog, latestYear);
+  let profile;
+  let catalog;
+  try {
+    [profile, catalog] = await Promise.all([getProfile(providerId), getMetricCatalog()]);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
+  const hasFacts = profile.facts.length > 0;
+  const latestYear = hasFacts ? Math.max(...profile.facts.map((fact) => fact.reporting_year)) : 0;
+  const latestFacts = hasFacts ? curatedLatestFacts(profile.facts, catalog, latestYear) : [];
   const kpiFacts = summaryFacts(latestFacts);
   const selectedFact = selectedFactFromQuery(kpiFacts, query.metric_id);
+
+  if (!selectedFact) {
+    return (
+      <div className="space-y-6">
+        <ProviderHeader provider={profile.provider} />
+        <section className="panel p-6">
+          <h2 className="text-base font-semibold">No metrics available</h2>
+          <p className="mt-2 text-sm text-muted">
+            This provider has no curated metrics in the warehouse yet. Check back after the next data ingestion run.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   const [insight, trend, peerRankings] = await Promise.all([
     getMetricInsight(selectedFact.provider_id ?? providerId, selectedFact.metric_id, String(selectedFact.reporting_year), selectedFact.dimension_scope),
     getTrends(selectedFact.metric_id, providerId, selectedFact.dimension_scope),
@@ -34,20 +58,7 @@ export default async function ProviderProfilePage({
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">{profile.provider.provider_name}</h1>
-          <p className="mt-1 text-sm text-muted">{profile.provider.state} · Public university profile</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {profile.provider.mission_group ? <Badge>{profile.provider.mission_group}</Badge> : null}
-            {profile.provider.table_classification ? <Badge>{profile.provider.table_classification}</Badge> : null}
-            {profile.provider.state ? <Badge>{profile.provider.state}</Badge> : null}
-          </div>
-        </div>
-        <a className="rounded-md border border-line bg-white px-3 py-2 text-sm" href={profile.provider.website ?? "#"}>
-          Provider website
-        </a>
-      </section>
+      <ProviderHeader provider={profile.provider} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpiFacts.map((fact) => (
@@ -149,9 +160,9 @@ function MetricInsightPanel({ insight }: { insight: MetricInsight }) {
           <div className="mt-6 border-t border-line pt-4 text-sm text-muted">
             <div>{sourceText}</div>
             {insight.source.source_url ? (
-              <a className="mt-1 inline-block text-teal hover:underline" href={insight.source.source_url}>
+              <SafeExternalLink className="mt-1 inline-block text-teal hover:underline" href={insight.source.source_url}>
                 Source file
-              </a>
+              </SafeExternalLink>
             ) : null}
           </div>
         </div>
@@ -226,6 +237,27 @@ function shortYear(year: number) {
   return `'${String(year).slice(-2)}`;
 }
 
+function ProviderHeader({ provider }: { provider: Provider }) {
+  return (
+    <section className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold">{provider.provider_name}</h1>
+        <p className="mt-1 text-sm text-muted">{provider.state} · Public university profile</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {provider.mission_group ? <Badge>{provider.mission_group}</Badge> : null}
+          {provider.table_classification ? <Badge>{provider.table_classification}</Badge> : null}
+          {provider.state ? <Badge>{provider.state}</Badge> : null}
+        </div>
+      </div>
+      {provider.website ? (
+        <SafeExternalLink className="rounded-md border border-line bg-white px-3 py-2 text-sm" href={provider.website}>
+          Provider website
+        </SafeExternalLink>
+      ) : null}
+    </section>
+  );
+}
+
 function Badge({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-md border border-line bg-slate-50 px-2 py-0.5 text-xs font-medium text-muted">
@@ -295,7 +327,8 @@ function summaryFacts(facts: FactRow[]) {
   return summaryMetricIds.map((metricId) => byMetricId.get(metricId)).filter((fact): fact is FactRow => Boolean(fact));
 }
 
-function selectedFactFromQuery(facts: FactRow[], metricId: string | string[] | undefined) {
+function selectedFactFromQuery(facts: FactRow[], metricId: string | string[] | undefined): FactRow | undefined {
+  if (!facts.length) return undefined;
   const selectedMetricId = Array.isArray(metricId) ? metricId[0] : metricId;
   return facts.find((fact) => fact.metric_id === selectedMetricId) ?? facts[0];
 }

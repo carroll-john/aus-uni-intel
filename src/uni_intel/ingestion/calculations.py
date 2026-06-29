@@ -19,7 +19,6 @@ from uni_intel.ingestion.common import (
 )
 from uni_intel.ingestion.metrics import CALCULATED_METRICS
 
-
 DATASET_ID = "calculated_metrics"
 SOURCE_FILE_ID = "calculated_metrics_local"
 

@@ -13,6 +13,8 @@ import duckdb
 
 from uni_intel.config import QUALITY_DIR
 
+DOWNLOAD_TIMEOUT_SECONDS = 60
+
 
 @dataclass(frozen=True)
 class SourceDataset:
@@ -57,7 +59,7 @@ def download_file(url: str, destination: Path, force: bool = False) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists() and not force:
         return
-    with urllib.request.urlopen(url) as response, destination.open("wb") as handle:
+    with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response, destination.open("wb") as handle:
         shutil.copyfileobj(response, handle)
 
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from openpyxl import Workbook
 import pytest
+from openpyxl import Workbook
 
 from uni_intel.ingestion.parsers.finance import FinanceParseError, FinanceParser
 

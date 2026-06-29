@@ -1,3 +1,4 @@
+import { SafeExternalLink } from "@/components/SafeExternalLink";
 import { getMetricCatalog, getMetrics, getQuality, getSources } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export default async function SourcesPage() {
                 <td className="px-3 py-2 tabular-nums">{source.row_count}</td>
                 <td className="px-3 py-2">{source.reporting_year ?? "multi-year"}</td>
                 <td className="px-3 py-2 text-teal">
-                  <a href={source.source_url}>Open</a>
+                  <SafeExternalLink href={source.source_url}>Open</SafeExternalLink>
                 </td>
               </tr>
             ))}

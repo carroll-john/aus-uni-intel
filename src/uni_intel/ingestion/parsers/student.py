@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from openpyxl import Workbook, load_workbook
 import xlrd
+from openpyxl import Workbook, load_workbook
 
 
 class StudentParseError(ValueError):

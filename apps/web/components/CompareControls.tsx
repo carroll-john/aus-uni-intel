@@ -312,32 +312,32 @@ function GroupedMetricRows({
   onSelect: (metricId: string) => void;
   selectedMetricId: string;
 }) {
+  const rows: ReactNode[] = [];
   let currentGroup = "";
-  return (
-    <>
-      {metrics.map((metric) => {
-        const group = metricGroup(metric);
-        const showGroup = group !== currentGroup;
-        currentGroup = group;
-        return (
-          <div key={metric.metric_id}>
-            {showGroup ? (
-              <div className="border-b border-line bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase text-muted">
-                {group}
-              </div>
-            ) : null}
-            <SelectableRow
-              disabled={false}
-              meta={rawMetricName(metric) ? `Source: ${rawMetricName(metric)}` : metric.source_dataset}
-              onToggle={() => onSelect(metric.metric_id)}
-              selected={selectedMetricId === metric.metric_id}
-              title={metric.metric_name}
-            />
+
+  for (const metric of metrics) {
+    const group = metricGroup(metric);
+    const showGroup = group !== currentGroup;
+    currentGroup = group;
+    rows.push(
+      <div key={metric.metric_id}>
+        {showGroup ? (
+          <div className="border-b border-line bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase text-muted">
+            {group}
           </div>
-        );
-      })}
-    </>
-  );
+        ) : null}
+        <SelectableRow
+          disabled={false}
+          meta={rawMetricName(metric) ? `Source: ${rawMetricName(metric)}` : metric.source_dataset}
+          onToggle={() => onSelect(metric.metric_id)}
+          selected={selectedMetricId === metric.metric_id}
+          title={metric.metric_name}
+        />
+      </div>
+    );
+  }
+
+  return <>{rows}</>;
 }
 
 function toggleSelection(current: string[], id: string) {

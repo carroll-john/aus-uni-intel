@@ -31,14 +31,23 @@ export default async function ComparePage({
   const year = one(query.year) ?? "2024";
   const benchmarkGroup = missionGroups.has(one(query.benchmark) ?? "") ? (one(query.benchmark) as string) : "";
 
-  const [rows, trendGroups, benchmark] = await Promise.all([
+  const [rows, trendGroups, benchmarkResult] = await Promise.all([
     getCompare(selectedProviders, [selectedMetric], year),
     Promise.all(selectedProviders.map((providerId) => getTrends(selectedMetric, providerId))),
     benchmarkGroup
-      ? getBenchmarks(selectedMetric, { groupBy: "mission_group", missionGroup: benchmarkGroup }).catch(() => undefined)
-      : Promise.resolve(undefined)
+      ? getBenchmarks(selectedMetric, { groupBy: "mission_group", missionGroup: benchmarkGroup })
+          .then((data) => ({ data, error: false as const }))
+          .catch((error) => {
+            if (process.env.NODE_ENV !== "production") {
+              console.error(error);
+            }
+            return { data: undefined, error: true as const };
+          })
+      : Promise.resolve({ data: undefined, error: false as const })
   ]);
   const trendRows = trendGroups.flat();
+  const benchmark = benchmarkResult.data;
+  const benchmarkUnavailable = benchmarkResult.error;
 
   const benchmarkRows = benchmark?.rows ?? [];
   const benchmarkBar = benchmarkRows.find((row) => String(row.reporting_year) === year);
@@ -65,6 +74,9 @@ export default async function ComparePage({
         selectedBenchmark={benchmarkGroup}
         year={year}
       />
+      {benchmarkUnavailable ? (
+        <p className="text-sm text-amber">Benchmark unavailable for the selected peer group.</p>
+      ) : null}
       <section className="panel p-4">
         <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
           <h2 className="text-base font-semibold">Metric history</h2>
