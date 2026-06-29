@@ -7,6 +7,25 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+const kpiDisplay: Record<string, { label: string; order: number }> = {
+  finance_total_revenues_from_continuing_operations_including_deferred_superannuation: {
+    label: "Total revenue (continuing operations) $",
+    order: 1
+  },
+  student_total_enrolments: {
+    label: "Total enrolments",
+    order: 2
+  },
+  herdc_research_income_total: {
+    label: "HERDC research income (Cat 1-4) $",
+    order: 3
+  },
+  qilt_overall_educational_experience_positive_rating: {
+    label: "Overall educational experience positive rating",
+    order: 4
+  }
+};
+
 export default async function SectorOverviewPage({
   searchParams
 }: {
@@ -14,7 +33,8 @@ export default async function SectorOverviewPage({
 }) {
   const query = await searchParams;
   const overview = await getOverview();
-  const selectedKpi = selectedKpiFromQuery(overview.kpis, query.metric_id);
+  const kpis = orderedKpis(overview.kpis);
+  const selectedKpi = selectedKpiFromQuery(kpis, query.metric_id);
   const selectedScope = selectedKpi.dimension_scope;
   const [selectedRankings, selectedTrendRows] = await Promise.all([
     getRankings(selectedKpi.metric_id, String(selectedKpi.reporting_year), selectedScope, 10),
@@ -39,7 +59,7 @@ export default async function SectorOverviewPage({
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {overview.kpis.map((kpi) => (
+        {kpis.map((kpi) => (
           <KpiLink fact={kpi} href={`/?metric_id=${encodeURIComponent(kpi.metric_id)}`} isActive={kpi.metric_id === selectedKpi.metric_id} key={kpi.metric_id} />
         ))}
       </section>
@@ -92,6 +112,15 @@ function KpiLink({ fact, href, isActive }: { fact: FactRow; href: string; isActi
 function selectedKpiFromQuery(kpis: FactRow[], metricId: string | string[] | undefined) {
   const selectedMetricId = Array.isArray(metricId) ? metricId[0] : metricId;
   return kpis.find((kpi) => kpi.metric_id === selectedMetricId) ?? kpis[0];
+}
+
+function orderedKpis(kpis: FactRow[]) {
+  return [...kpis]
+    .map((kpi) => ({
+      ...kpi,
+      metric_name: kpiDisplay[kpi.metric_id]?.label ?? kpi.metric_name
+    }))
+    .sort((a, b) => (kpiDisplay[a.metric_id]?.order ?? 99) - (kpiDisplay[b.metric_id]?.order ?? 99));
 }
 
 function aggregateSectorTrend(rows: FactRow[], unit?: string): FactRow[] {
