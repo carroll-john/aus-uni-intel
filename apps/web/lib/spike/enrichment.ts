@@ -191,6 +191,11 @@ export const UNAVAILABLE_CONCEPTS: { pattern: RegExp; label: string; closestIds:
 export function defaultEnrichment(label: string, group: string, sourceNote: string): EnrichmentOverlay {
   const isQilt = group === "Student experience";
   const breakdowns = isQilt ? QILT_BREAKDOWNS : group.includes("Finance") ? FINANCE_BREAKDOWNS : STUDENT_BREAKDOWNS;
+  const keywords = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 3 && !["total", "from", "including"].includes(word));
   return {
     question: `What does ${label} show?`,
     description: sourceNote,
@@ -198,6 +203,7 @@ export function defaultEnrichment(label: string, group: string, sourceNote: stri
     defaultChart: isQilt ? "ranking_bar" : "trend_line",
     allowedCharts: isQilt
       ? ["ranking_bar", "trend_line", "metric_card"]
-      : ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"]
+      : ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
+    keywords: [label.toLowerCase(), ...keywords]
   };
 }

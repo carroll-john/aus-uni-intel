@@ -127,7 +127,9 @@ export function SpikeClient() {
     <div className="space-y-6">
       <section className="rounded-md border border-line bg-white px-4 py-3 text-sm text-muted">
         Open this page in <strong className="text-ink">Safari or Chrome</strong> if Cursor&apos;s built-in preview shows
-        &quot;Can&apos;t connect to server&quot; after compose. Keep the terminal running <code className="text-xs">npm run dev</code>.
+        &quot;Can&apos;t connect to server&quot; after compose. Selection uses an LLM when{" "}
+        <code className="text-xs">OPENAI_API_KEY</code> or <code className="text-xs">GOOGLE_GENERATIVE_AI_API_KEY</code> is
+        set; otherwise a keyword heuristic runs (check the log badge).
       </section>
       <section className="panel space-y-3 p-4">
         <label className="block text-sm font-medium text-ink" htmlFor="intent">
