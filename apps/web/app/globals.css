@@ -1,11 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: light;
-  background: #f7f9fb;
-  color: #18212f;
+  --kp-navy: #002451;
+  --kp-navy-deep: #001737;
+  --kp-navy-soft: #0d3e7f;
+  --kp-blue: #0070c0;
+  --kp-blue-light: #99eaff;
+  --kp-cyan: #02c6fa;
+  --kp-gold: #fdcf41;
+  --kp-gold-deep: #d9a514;
+  --kp-coral: #e35a4f;
+  --kp-cream: #f6f1e7;
+  --kp-off-white: #f8f6f1;
+  --kp-paper: #ffffff;
+  --kp-ink: #002451;
+  --kp-body: #302e2e;
+  --kp-muted: #5a6779;
+  --kp-soft-muted: #8b94a3;
+  --kp-border: #d8dde4;
+  --kp-border-soft: #ecedf0;
+  --kp-shadow: 0 2px 8px rgba(10, 31, 68, 0.1);
+  background: var(--kp-off-white);
+  color: var(--kp-ink);
 }
 
 * {
@@ -14,8 +35,14 @@
 
 body {
   margin: 0;
-  background: #f7f9fb;
-  color: #18212f;
+  background:
+    radial-gradient(circle at top right, rgba(153, 234, 255, 0.28), transparent 320px),
+    linear-gradient(180deg, #ffffff 0%, var(--kp-off-white) 360px);
+  color: var(--kp-ink);
+  font-family: "proxima-nova", "Proxima Nova", Montserrat, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -29,9 +56,44 @@ input {
   font: inherit;
 }
 
+button,
+a,
+select,
+input {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--kp-gold);
+  outline-offset: 2px;
+}
+
 .panel {
-  border: 1px solid #d9e2ec;
+  border: 1px solid var(--kp-border);
   border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--kp-shadow);
+}
+
+.kp-rule {
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin-top: 14px;
+  background: var(--kp-gold);
+}
+
+.kp-eyebrow {
+  color: var(--kp-gold-deep);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }

@@ -6,7 +6,7 @@ export function RankingTable({ rows, showMetric = true }: { rows: FactRow[]; sho
   return (
     <div className="overflow-x-auto rounded-md border border-line">
       <table className={`${showMetric ? "min-w-[640px]" : "min-w-[420px]"} w-full border-collapse text-left text-sm`}>
-        <thead className="bg-slate-50 text-xs uppercase text-muted">
+        <thead className="bg-cream/60 text-xs uppercase text-muted">
           <tr>
             <th className="px-3 py-2">Rank</th>
             <th className="px-3 py-2">Provider</th>

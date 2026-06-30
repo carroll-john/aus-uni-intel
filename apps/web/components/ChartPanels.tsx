@@ -23,7 +23,9 @@ function isBenchmarkKey(key: string | undefined) {
   return Boolean(key && key.startsWith(BENCHMARK_KEY_PREFIX));
 }
 
-const benchmarkColor = "#64748b";
+const benchmarkColor = "#5a6779";
+const primaryChartColor = "#0070c0";
+const secondaryChartColor = "#d9a514";
 
 type ChartDatum = {
   label?: string;
@@ -52,11 +54,11 @@ export function RankingBarChart({
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20, top: 8, bottom: 8 }}>
-          <CartesianGrid stroke="#e7edf3" horizontal={false} />
+          <CartesianGrid stroke="#ecedf0" horizontal={false} />
           <XAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} type="number" tick={{ fontSize: 11 }} />
           <YAxis dataKey="provider" type="category" width={130} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
-          <Bar dataKey="value" fill="#147f82" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="value" fill={primaryChartColor} radius={[0, 4, 4, 0]} />
           {benchmark && Number.isFinite(benchmark.value) ? (
             <ReferenceLine
               x={benchmark.value}
@@ -83,11 +85,11 @@ export function TrendLineChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#e7edf3" />
+          <CartesianGrid stroke="#ecedf0" />
           <XAxis dataKey="year" tick={{ fontSize: 11 }} />
           <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
-          <Line dataKey="value" stroke="#147f82" strokeWidth={2} dot={{ r: 3 }} />
+          <Line dataKey="value" stroke={primaryChartColor} strokeWidth={2.5} dot={{ r: 3, fill: "#ffffff", strokeWidth: 2 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -128,7 +130,7 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
     <div className="h-80 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 24, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#e7edf3" />
+          <CartesianGrid stroke="#ecedf0" />
           <XAxis dataKey="year" allowDecimals={false} tick={{ fontSize: 11 }} />
           <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
           <Tooltip formatter={(value, name) => [formatValue(Number(value), axisUnit), name]} />
@@ -165,13 +167,13 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 32 }}>
-          <CartesianGrid stroke="#e7edf3" vertical={false} />
+          <CartesianGrid stroke="#ecedf0" vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={56} />
           <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
-          <Bar dataKey="value" fill="#b7791f" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="value" fill={secondaryChartColor} radius={[4, 4, 0, 0]}>
             {data.map((datum, index) => (
-              <Cell key={index} fill={datum.benchmark ? benchmarkColor : "#b7791f"} />
+              <Cell key={index} fill={datum.benchmark ? benchmarkColor : secondaryChartColor} />
             ))}
           </Bar>
         </BarChart>
@@ -194,11 +196,11 @@ function shortProviderName(name: string) {
   return name.replace("The University of ", "U. ").replace("University of ", "U. ");
 }
 
-const chartColors = ["#147f82", "#b7791f", "#4f46e5", "#be123c", "#15803d"];
+const chartColors = ["#0070c0", "#fdcf41", "#e35a4f", "#02c6fa", "#0d3e7f"];
 
 function EmptyChart() {
   return (
-    <div className="flex h-72 items-center justify-center rounded-md border border-dashed border-line bg-slate-50 text-sm text-muted">
+    <div className="flex h-72 items-center justify-center rounded-md border border-dashed border-line bg-cream/50 text-sm text-muted">
       No data for the selected metric.
     </div>
   );

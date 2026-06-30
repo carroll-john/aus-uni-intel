@@ -13,7 +13,7 @@ export default async function ProvidersPage() {
       </div>
       <div className="panel overflow-hidden">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-muted">
+          <thead className="bg-cream/60 text-xs uppercase text-muted">
             <tr>
               <th className="px-4 py-3">Provider</th>
               <th className="px-4 py-3">Mission group</th>

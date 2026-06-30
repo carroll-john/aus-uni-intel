@@ -96,7 +96,7 @@ export default async function ComparePage({
         </div>
         <div className="panel overflow-hidden">
           <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-muted">
+            <thead className="bg-cream/60 text-xs uppercase text-muted">
               <tr>
                 <th className="px-3 py-2">Provider</th>
                 <th className="px-3 py-2">Metric</th>

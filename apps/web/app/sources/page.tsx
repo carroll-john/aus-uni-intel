@@ -15,7 +15,7 @@ export default async function SourcesPage() {
 
       <section className="panel overflow-hidden">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-muted">
+          <thead className="bg-cream/60 text-xs uppercase text-muted">
             <tr>
               <th className="px-3 py-2">Source</th>
               <th className="px-3 py-2">Rows</th>
@@ -44,7 +44,7 @@ export default async function SourcesPage() {
           <p className="mt-1 text-sm text-muted">Default product metrics grouped from the source-site taxonomy. Missing rows are backlog items, not selectable chart metrics.</p>
         </div>
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-muted">
+          <thead className="bg-cream/60 text-xs uppercase text-muted">
             <tr>
               <th className="px-3 py-2">Group</th>
               <th className="px-3 py-2">Metric</th>
@@ -90,7 +90,7 @@ export default async function SourcesPage() {
           <p className="mt-1 text-sm text-muted">Full source-backed catalogue used for advanced inspection.</p>
         </div>
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-muted">
+          <thead className="bg-cream/60 text-xs uppercase text-muted">
             <tr>
               <th className="px-3 py-2">Metric</th>
               <th className="px-3 py-2">Source</th>
@@ -114,7 +114,7 @@ export default async function SourcesPage() {
 
       <section className="panel overflow-hidden">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-muted">
+          <thead className="bg-cream/60 text-xs uppercase text-muted">
             <tr>
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Check</th>

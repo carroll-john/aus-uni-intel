@@ -113,7 +113,7 @@ export function CompareControls({
               ))}
             </select>
             <button
-              className="rounded-md border border-line bg-white px-2 py-1.5 text-xs font-medium text-teal disabled:cursor-not-allowed disabled:text-slate-300"
+              className="rounded-md border border-line bg-white px-2 py-1.5 text-xs font-medium text-teal disabled:cursor-not-allowed disabled:text-muted"
               disabled={providerIds.length >= maxProviders || filteredProviders.length === 0}
               onClick={addShown}
               type="button"
@@ -155,7 +155,7 @@ export function CompareControls({
           </div>
         </SelectionPanel>
 
-        <div className="rounded-md border border-line bg-slate-50 p-3">
+        <div className="rounded-md border border-line bg-cream/60 p-3">
           <label className="text-xs font-medium uppercase text-muted" htmlFor="compare-year">
             Year
           </label>
@@ -186,7 +186,7 @@ export function CompareControls({
             ))}
           </select>
           <button
-            className="mt-4 w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="mt-4 w-full rounded-md bg-teal px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-line"
             disabled={providerIds.length === 0 || !metricId}
             type="submit"
           >
@@ -224,7 +224,7 @@ function SelectionPanel({
       <div className="flex items-center justify-between gap-3">
         <legend className="text-xs font-medium uppercase text-muted">{title}</legend>
         <div className="flex items-center gap-2">
-          <span className="rounded-md border border-line bg-slate-50 px-2 py-1 text-xs text-muted">{countLabel}</span>
+          <span className="rounded-md border border-line bg-cream/60 px-2 py-1 text-xs text-muted">{countLabel}</span>
           {onClear ? (
             <button
               aria-label={`Clear ${title.toLowerCase()}`}
@@ -255,7 +255,7 @@ function SelectedChips({ items, onRemove }: { items: Array<{ id: string; label: 
   return (
     <div className="mt-3 flex min-h-9 flex-wrap gap-2">
       {items.map((item) => (
-        <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-slate-50 px-2 py-1 text-xs" key={item.id}>
+        <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-cream/60 px-2 py-1 text-xs" key={item.id}>
           <span className="truncate">{item.label}</span>
           {onRemove ? (
             <button aria-label={`Remove ${item.label}`} className="text-muted hover:text-ink" onClick={() => onRemove(item.id)} type="button">
@@ -283,7 +283,7 @@ function SelectableRow({
 }) {
   return (
     <button
-      className="flex w-full items-start gap-3 border-b border-line px-3 py-2 text-left last:border-b-0 enabled:hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+      className="flex w-full items-start gap-3 border-b border-line px-3 py-2 text-left last:border-b-0 enabled:hover:bg-cream/60 disabled:cursor-not-allowed disabled:opacity-45"
       disabled={disabled}
       onClick={onToggle}
       type="button"
@@ -322,7 +322,7 @@ function GroupedMetricRows({
     rows.push(
       <div key={metric.metric_id}>
         {showGroup ? (
-          <div className="border-b border-line bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase text-muted">
+          <div className="border-b border-line bg-cream/60 px-3 py-1.5 text-xs font-semibold uppercase text-muted">
             {group}
           </div>
         ) : null}
