@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SafeExternalLink } from "@/components/SafeExternalLink";
 import { getProviders } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,15 @@ export default async function ProvidersPage() {
                 <td className="px-4 py-3 text-muted">{provider.mission_group ?? "—"}</td>
                 <td className="px-4 py-3 text-muted">{provider.table_classification ?? "—"}</td>
                 <td className="px-4 py-3 text-muted">{provider.state}</td>
-                <td className="px-4 py-3 text-muted">{provider.website}</td>
+                <td className="px-4 py-3 text-muted">
+                  {provider.website ? (
+                    <SafeExternalLink className="hover:text-teal" href={provider.website}>
+                      {provider.website}
+                    </SafeExternalLink>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

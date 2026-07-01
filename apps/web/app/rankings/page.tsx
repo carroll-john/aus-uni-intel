@@ -2,11 +2,10 @@ import { RankingBarChart } from "@/components/ChartPanels";
 import { RankingTable } from "@/components/DataTable";
 import { getBenchmarks, getMetricCatalog, getMetrics, getProviders, getRankings } from "@/lib/api";
 import type { Metric, MetricCatalogItem } from "@/lib/api";
+import { DEFAULT_METRIC_ID, DEFAULT_YEAR } from "@/lib/constants";
+import { distinct, one, pickOption } from "@/lib/search-params";
 
 export const dynamic = "force-dynamic";
-
-const defaultMetric =
-  "finance_total_revenues_from_continuing_operations_including_deferred_superannuation";
 
 export default async function RankingsPage({
   searchParams,
@@ -24,11 +23,11 @@ export default async function RankingsPage({
   const missionGroups = distinct(universities.map((provider) => provider.mission_group));
   const states = distinct(universities.map((provider) => provider.state));
 
-  const requestedMetricId = one(query.metric_id) ?? defaultMetric;
+  const requestedMetricId = one(query.metric_id) ?? DEFAULT_METRIC_ID;
   const metricId = metrics.some((metric) => metric.metric_id === requestedMetricId)
     ? requestedMetricId
-    : defaultMetric;
-  const year = one(query.year) ?? "2024";
+    : DEFAULT_METRIC_ID;
+  const year = one(query.year) ?? DEFAULT_YEAR;
   const scope = one(query.scope);
   const missionGroup = pickOption(one(query.mission_group), missionGroups);
   const state = pickOption(one(query.state), states);
@@ -158,18 +157,6 @@ export default async function RankingsPage({
       </section>
     </div>
   );
-}
-
-function one(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function pickOption(value: string | undefined, allowed: string[]) {
-  return value && allowed.includes(value) ? value : undefined;
-}
-
-function distinct(values: Array<string | null>) {
-  return Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
 }
 
 type SelectableMetric = Metric | (MetricCatalogItem & { metric_id: string });

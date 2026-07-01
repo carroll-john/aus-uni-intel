@@ -1,9 +1,10 @@
 import { RankingBarChart, TrendLineChart } from "@/components/ChartPanels";
 import { RankingTable } from "@/components/DataTable";
+import { KpiCard } from "@/components/KpiCard";
 import { getOverview, getRankings, getTrends } from "@/lib/api";
 import type { FactRow } from "@/lib/api";
-import { formatValue, groupBy } from "@/lib/format";
-import Link from "next/link";
+import { SECTOR_PROVIDER_ID } from "@/lib/constants";
+import { groupBy } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export default async function SectorOverviewPage({
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
-          <KpiLink
+          <KpiCard
             fact={kpi}
             href={`/?metric_id=${encodeURIComponent(kpi.metric_id)}`}
             isActive={kpi.metric_id === selectedKpi.metric_id}
@@ -137,24 +138,6 @@ function OverviewHeader({
   );
 }
 
-function KpiLink({ fact, href, isActive }: { fact: FactRow; href: string; isActive: boolean }) {
-  return (
-    <Link
-      aria-current={isActive ? "true" : undefined}
-      className={`panel block p-4 transition hover:-translate-y-0.5 hover:border-teal hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal ${
-        isActive ? "border-teal bg-teal/5" : ""
-      }`}
-      href={href}
-    >
-      <div className="text-xs font-medium uppercase text-muted">{fact.metric_name}</div>
-      <div className="mt-2 text-2xl font-semibold">{formatValue(fact.value, fact.unit)}</div>
-      <div className="mt-1 text-xs text-muted">
-        {fact.reporting_year} · {fact.dimension_scope}
-      </div>
-    </Link>
-  );
-}
-
 function selectedKpiFromQuery(kpis: FactRow[], metricId: string | string[] | undefined) {
   const selectedMetricId = Array.isArray(metricId) ? metricId[0] : metricId;
   return kpis.find((kpi) => kpi.metric_id === selectedMetricId) ?? kpis[0];
@@ -173,11 +156,11 @@ function orderedKpis(kpis: FactRow[]) {
 
 function aggregateSectorTrend(rows: FactRow[], unit?: string): FactRow[] {
   const recentRows = rows.filter((row) => row.reporting_year >= 2018);
-  const sectorRows = recentRows.filter((row) => row.provider_id === "sector_all_pub2");
+  const sectorRows = recentRows.filter((row) => row.provider_id === SECTOR_PROVIDER_ID);
   const byYear = new Map<number, { count: number; row: FactRow }>();
 
   for (const row of recentRows) {
-    if (row.provider_id === "sector_all_pub2") continue;
+    if (row.provider_id === SECTOR_PROVIDER_ID) continue;
     const existing = byYear.get(row.reporting_year);
     if (existing) {
       existing.count += 1;

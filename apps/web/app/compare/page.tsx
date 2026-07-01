@@ -10,14 +10,17 @@ import {
   getTrends,
 } from "@/lib/api";
 import type { BenchmarkRow, FactRow } from "@/lib/api";
+import {
+  BENCHMARK_KEY_PREFIX,
+  DEFAULT_COMPARE_PROVIDER_IDS,
+  DEFAULT_METRIC_ID,
+  DEFAULT_YEAR,
+  MAX_COMPARE_PROVIDERS,
+} from "@/lib/constants";
 import { formatValue } from "@/lib/format";
+import { many, one } from "@/lib/search-params";
 
 export const dynamic = "force-dynamic";
-
-const defaultProviders = ["university_of_sydney", "university_of_melbourne", "monash_university"];
-const defaultMetric =
-  "finance_total_revenues_from_continuing_operations_including_deferred_superannuation";
-const benchmarkKeyPrefix = "benchmark:";
 
 export default async function ComparePage({
   searchParams,
@@ -35,12 +38,15 @@ export default async function ComparePage({
   const missionGroups = new Set(
     universities.map((provider) => provider.mission_group).filter(Boolean) as string[]
   );
-  const selectedProviders = many(query.providers, defaultProviders).slice(0, 5);
-  const requestedMetric = many(query.metrics, [defaultMetric])[0] ?? defaultMetric;
+  const selectedProviders = many(query.providers, DEFAULT_COMPARE_PROVIDER_IDS).slice(
+    0,
+    MAX_COMPARE_PROVIDERS
+  );
+  const requestedMetric = many(query.metrics, [DEFAULT_METRIC_ID])[0] ?? DEFAULT_METRIC_ID;
   const selectedMetric = metrics.some((metric) => metric.metric_id === requestedMetric)
     ? requestedMetric
-    : defaultMetric;
-  const year = one(query.year) ?? "2024";
+    : DEFAULT_METRIC_ID;
+  const year = one(query.year) ?? DEFAULT_YEAR;
   const benchmarkGroup = missionGroups.has(one(query.benchmark) ?? "")
     ? (one(query.benchmark) as string)
     : "";
@@ -140,7 +146,7 @@ export default async function ComparePage({
 
 function benchmarkFact(group: string, row: BenchmarkRow): FactRow {
   return {
-    provider_id: `${benchmarkKeyPrefix}${group}`,
+    provider_id: `${BENCHMARK_KEY_PREFIX}${group}`,
     provider_name: `${group} average`,
     metric_id: "benchmark",
     metric_name: `${group} average`,
@@ -149,16 +155,6 @@ function benchmarkFact(group: string, row: BenchmarkRow): FactRow {
     value: row.average,
     unit: row.unit,
   };
-}
-
-function one(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function many(value: string | string[] | undefined, fallback: string[]) {
-  if (Array.isArray(value)) return value.flatMap((item) => item.split(",")).filter(Boolean);
-  if (value) return value.split(",").filter(Boolean);
-  return fallback;
 }
 
 function selectableMetrics(

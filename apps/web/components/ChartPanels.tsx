@@ -15,17 +15,21 @@ import {
   YAxis,
 } from "recharts";
 import type { FactRow } from "@/lib/api";
+import {
+  BENCHMARK_COLOR as benchmarkColor,
+  BENCHMARK_KEY_PREFIX,
+  CHART_COLORS as chartColors,
+  CHART_GRID_COLOR,
+  PRIMARY_CHART_COLOR as primaryChartColor,
+  SECONDARY_CHART_COLOR as secondaryChartColor,
+} from "@/lib/constants";
 import { formatAxisValue, formatValue } from "@/lib/format";
 
-export const BENCHMARK_KEY_PREFIX = "benchmark:";
+export { BENCHMARK_KEY_PREFIX };
 
 function isBenchmarkKey(key: string | undefined) {
   return Boolean(key && key.startsWith(BENCHMARK_KEY_PREFIX));
 }
-
-const benchmarkColor = "#5a6779";
-const primaryChartColor = "#0070c0";
-const secondaryChartColor = "#d9a514";
 
 type ChartDatum = {
   label?: string;
@@ -54,7 +58,7 @@ export function RankingBarChart({
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20, top: 8, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" horizontal={false} />
+          <CartesianGrid stroke={CHART_GRID_COLOR} horizontal={false} />
           <XAxis
             tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
             type="number"
@@ -94,7 +98,7 @@ export function TrendLineChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" />
+          <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="year" tick={{ fontSize: 11 }} />
           <YAxis
             tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
@@ -147,7 +151,7 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
     <div className="h-80 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 24, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" />
+          <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="year" allowDecimals={false} tick={{ fontSize: 11 }} />
           <YAxis
             tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
@@ -187,7 +191,7 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 32 }}>
-          <CartesianGrid stroke="#ecedf0" vertical={false} />
+          <CartesianGrid stroke={CHART_GRID_COLOR} vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={56} />
           <YAxis
             tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
@@ -221,8 +225,6 @@ function singleUnit(rows: FactRow[]) {
 function shortProviderName(name: string) {
   return name.replace("The University of ", "U. ").replace("University of ", "U. ");
 }
-
-const chartColors = ["#0070c0", "#fdcf41", "#e35a4f", "#02c6fa", "#0d3e7f"];
 
 function EmptyChart() {
   return (
