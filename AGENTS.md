@@ -85,7 +85,15 @@ Web-only (from `apps/web`): `npm run lint`, `npm run typecheck`, `npm run build`
 - **Serverless DB inflation:** in production the API reads
   `data/warehouse/university_intel.duckdb.gz` and inflates it into `/tmp` on cold
   start (`db.resolve_db_path`). Locally it reads the uncompressed file built by
-  `make ingest-all`.
+  `make ingest-all`. Resolution order is: local file, warm `/tmp` file, committed
+  gzip archive, then a remote archive from `UNI_INTEL_DB_URL`. The API opens one
+  read-only connection per warehouse and hands each request a cursor
+  (`api/deps.py`), so warm requests do not re-open the database.
+- **The ~32MB committed archive** (`university_intel.duckdb.gz`) bloats git history
+  on every data refresh. To host it off-git, upload the archive to object storage
+  and set `UNI_INTEL_DB_URL`; the API will fetch it on cold start. Removing the
+  archive from git history requires a history rewrite and is intentionally not
+  done automatically.
 - **Canonical scope selection:** when no `scope` is given, the API picks one
   canonical `dimension_scope` per provider/metric via a `QUALIFY ROW_NUMBER()`
   window (`api/analytics.py`) to avoid double-counting dual-sector providers.
