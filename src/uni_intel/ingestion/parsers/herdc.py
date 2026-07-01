@@ -5,6 +5,8 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
+from uni_intel.ingestion.parsers._numeric import parse_optional_numeric
+
 
 class HerdcParseError(ValueError):
     pass
@@ -70,14 +72,8 @@ class HerdcResearchIncomeParser:
 
 
 def parse_numeric(value: object) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    text = str(value).strip().replace(",", "")
-    if text in {"", "n/a", "np"}:
-        return None
-    try:
-        return float(text)
-    except ValueError as exc:
-        raise HerdcParseError(f"Invalid HERDC numeric value: {value}") from exc
+    return parse_optional_numeric(
+        value,
+        {"", "n/a", "np"},
+        lambda bad: HerdcParseError(f"Invalid HERDC numeric value: {bad}"),
+    )

@@ -7,6 +7,8 @@ from pathlib import Path
 import xlrd
 from openpyxl import Workbook, load_workbook
 
+from uni_intel.ingestion.parsers._numeric import parse_optional_numeric
+
 
 class StudentParseError(ValueError):
     pass
@@ -640,17 +642,11 @@ def resolve_metric_column_indexes(header: tuple[object, ...], metric: StudentMet
 
 
 def parse_numeric(value: object) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    text = str(value).strip().replace(",", "")
-    if text in {"", "np", "< 5", "n/a"}:
-        return None
-    try:
-        return float(text)
-    except ValueError as exc:
-        raise StudentParseError(f"Invalid numeric value: {value}") from exc
+    return parse_optional_numeric(
+        value,
+        {"", "np", "< 5", "n/a"},
+        lambda bad: StudentParseError(f"Invalid numeric value: {bad}"),
+    )
 
 
 def should_skip_provider_row(provider: str) -> bool:
