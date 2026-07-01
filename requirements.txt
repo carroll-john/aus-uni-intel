@@ -1,3 +1,8 @@
+# Runtime dependencies for Vercel's @vercel/python builder (see api/index.py).
+#
+# Source of truth for the full dependency graph (runtime + dev) is pyproject.toml.
+# This file mirrors ONLY the runtime deps needed by the deployed serverless API.
+# Keep it aligned with [project.dependencies] in pyproject.toml.
 duckdb>=1.0.0
 fastapi>=0.111.0
 openpyxl>=3.1.0

@@ -98,11 +98,12 @@ def test_student_section_ingestion_is_idempotent_and_purges_summary_facts(
     try:
         assert conn.execute("SELECT COUNT(*) FROM stg_student_rows").fetchone()[0] == 1
         assert conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0] == 1
-        assert conn.execute(
-            "SELECT COUNT(*) FROM facts WHERE source_file_id = 'old_student_summary'"
-        ).fetchone()[0] == 0
-        assert conn.execute(
-            """
+        assert (
+            conn.execute("SELECT COUNT(*) FROM facts WHERE source_file_id = 'old_student_summary'").fetchone()[0] == 0
+        )
+        assert (
+            conn.execute(
+                """
             SELECT COUNT(*)
             FROM facts
             WHERE metric_id = 'student_total_enrolments'
@@ -111,7 +112,9 @@ def test_student_section_ingestion_is_idempotent_and_purges_summary_facts(
               AND source_line_item IS NOT NULL
               AND dimensions_json IS NOT NULL
             """
-        ).fetchone()[0] == 1
+            ).fetchone()[0]
+            == 1
+        )
     finally:
         conn.close()
 
@@ -139,8 +142,9 @@ def test_qilt_ingestion_loads_configured_history_idempotently(
         assert conn.execute("SELECT COUNT(*) FROM stg_qilt_rows").fetchone()[0] == 12
         assert conn.execute("SELECT COUNT(*) FROM facts").fetchone()[0] == 12
         assert conn.execute("SELECT DISTINCT reporting_year FROM facts").fetchone()[0] == 2021
-        assert conn.execute(
-            """
+        assert (
+            conn.execute(
+                """
             SELECT COUNT(*)
             FROM facts
             WHERE metric_id LIKE 'qilt%'
@@ -149,7 +153,9 @@ def test_qilt_ingestion_loads_configured_history_idempotently(
               AND source_line_item IS NOT NULL
               AND dimensions_json IS NOT NULL
             """
-        ).fetchone()[0] == 12
+            ).fetchone()[0]
+            == 12
+        )
     finally:
         conn.close()
 
@@ -166,11 +172,7 @@ def _write_student_section_workbook(path: Path) -> None:
     worksheet = workbook.active
     worksheet.title = "2.5"
     worksheet.append([])
-    worksheet.append(
-        [
-            "Table 2.5: All Students by State, Higher Education Institution and Broad Level of Course, 2024"
-        ]
-    )
+    worksheet.append(["Table 2.5: All Students by State, Higher Education Institution and Broad Level of Course, 2024"])
     worksheet.append(["State", "Institution", "Bachelor", "Total"])
     worksheet.append(["NSW", "The University of Sydney", 10, 100])
     worksheet.append(["NSW", "Total NSW", 10, 100])

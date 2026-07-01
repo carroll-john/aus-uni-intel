@@ -55,12 +55,7 @@ def finance_publication_url(year: int) -> str:
 
 def default_raw_path(year: int, source_url: str) -> Path:
     extension = "xlsx" if source_url.rstrip("/").endswith("/xlsx") else "csv"
-    return (
-        RAW_DIR
-        / "finance"
-        / str(year)
-        / f"finance_{year}_financial_reports_higher_education_providers.{extension}"
-    )
+    return RAW_DIR / "finance" / str(year) / f"finance_{year}_financial_reports_higher_education_providers.{extension}"
 
 
 def sha256_file(path: Path) -> str:
@@ -335,9 +330,7 @@ def build_quality_checks(
             "warning" if unmatched_providers else "info",
             str(len(unmatched_providers)),
             "0 public-university providers unmatched",
-            ", ".join(unmatched_providers)
-            if unmatched_providers
-            else "All source provider names matched.",
+            ", ".join(unmatched_providers) if unmatched_providers else "All source provider names matched.",
         ),
         QualityCheck(
             "metrics_have_sources_and_definitions",
@@ -374,9 +367,7 @@ def persist_quality_checks(
 ) -> None:
     rows = []
     for check in checks:
-        check_id = hashlib.sha1(
-            f"{run_id}|{source_file_id}|{check.check_name}".encode("utf-8")
-        ).hexdigest()
+        check_id = hashlib.sha1(f"{run_id}|{source_file_id}|{check.check_name}".encode()).hexdigest()
         rows.append(
             (
                 check_id,

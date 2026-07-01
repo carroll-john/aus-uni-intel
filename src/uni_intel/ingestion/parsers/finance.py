@@ -42,8 +42,7 @@ class FinanceParser:
             for row_number, row in enumerate(csv.reader(handle), start=1):
                 if len(row) != self.expected_columns:
                     raise FinanceParseError(
-                        f"Row {row_number} has {len(row)} columns; "
-                        f"expected {self.expected_columns}"
+                        f"Row {row_number} has {len(row)} columns; expected {self.expected_columns}"
                     )
                 rows.append(self._parse_row(row_number, row))
 
@@ -72,7 +71,9 @@ class FinanceParser:
             data_start_row = provider_row + (3 if is_dual_sector_sheet else 2)
 
             for row_number in range(data_start_row, worksheet.max_row + 1):
-                line_item = str(worksheet.cell(row_number, 2).value or worksheet.cell(row_number, 1).value or "").strip()
+                line_item = str(
+                    worksheet.cell(row_number, 2).value or worksheet.cell(row_number, 1).value or ""
+                ).strip()
                 if not line_item:
                     continue
 

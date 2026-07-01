@@ -7,7 +7,11 @@ RAW_DIR = DATA_DIR / "raw"
 WAREHOUSE_DIR = DATA_DIR / "warehouse"
 QUALITY_DIR = DATA_DIR / "quality"
 SEED_DIR = DATA_DIR / "seed"
-DB_PATH = Path(os.environ["UNI_INTEL_DB_PATH"]) if os.environ.get("UNI_INTEL_DB_PATH") else WAREHOUSE_DIR / "university_intel.duckdb"
+DB_PATH = (
+    Path(os.environ["UNI_INTEL_DB_PATH"])
+    if os.environ.get("UNI_INTEL_DB_PATH")
+    else WAREHOUSE_DIR / "university_intel.duckdb"
+)
 DB_ARCHIVE_PATH = WAREHOUSE_DIR / "university_intel.duckdb.gz"
 SCHEMA_PATH = PROJECT_ROOT / "sql" / "schema.sql"
 
@@ -54,22 +58,10 @@ FINANCE_URLS = {
     2024: FINANCE_2024_URL,
 }
 FINANCE_PUBLICATION_URLS = {
-    2018: (
-        "https://www.education.gov.au/higher-education-publications/resources/"
-        "finance-publication-2018"
-    ),
-    2019: (
-        "https://www.education.gov.au/higher-education-publications/resources/"
-        "finance-publication-2019"
-    ),
-    2020: (
-        "https://www.education.gov.au/higher-education-publications/resources/"
-        "finance-publication-2020"
-    ),
-    2021: (
-        "https://www.education.gov.au/higher-education-publications/resources/"
-        "finance-publication-2021"
-    ),
+    2018: ("https://www.education.gov.au/higher-education-publications/resources/finance-publication-2018"),
+    2019: ("https://www.education.gov.au/higher-education-publications/resources/finance-publication-2019"),
+    2020: ("https://www.education.gov.au/higher-education-publications/resources/finance-publication-2020"),
+    2021: ("https://www.education.gov.au/higher-education-publications/resources/finance-publication-2021"),
     2022: (
         "https://www.education.gov.au/higher-education-publications/resources/"
         "2022-higher-education-providers-finance-tables"
@@ -81,13 +73,9 @@ FINANCE_PUBLICATION_URLS = {
     2024: FINANCE_PUBLICATION_URL,
 }
 
-STUDENT_SUMMARY_2024_URL = (
-    "https://www.education.gov.au/download/19478/"
-    "2024-student-summary-tables/41926/document/xlsx"
-)
+STUDENT_SUMMARY_2024_URL = "https://www.education.gov.au/download/19478/2024-student-summary-tables/41926/document/xlsx"
 STUDENT_COMPLETIONS_2024_URL = (
-    "https://www.education.gov.au/download/19502/"
-    "2024-section-14-award-course-completions/41967/document/xlsx"
+    "https://www.education.gov.au/download/19502/2024-section-14-award-course-completions/41967/document/xlsx"
 )
 STUDENT_PUBLICATION_URL = "https://www.education.gov.au/higher-education-statistics/student-data"
 STUDENT_SECTION_YEARS = tuple(range(2018, 2025))
@@ -104,10 +92,7 @@ HERDC_RESEARCH_INCOME_URL = (
     "research-and-development-income-time-series/43586/"
     "research-income-time-seris/xlsx"
 )
-HERDC_PUBLICATION_URL = (
-    "https://www.education.gov.au/research-block-grants/resources/"
-    "research-income-time-series"
-)
+HERDC_PUBLICATION_URL = "https://www.education.gov.au/research-block-grants/resources/research-income-time-series"
 
 QILT_SES_2024_URL = (
     "https://qilt.edu.au/docs/default-source/default-document-library/"

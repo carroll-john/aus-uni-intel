@@ -47,9 +47,7 @@ DEPENDENCIES = {
 
 def calculate_metrics(db_path: Path = DB_PATH) -> dict[str, object]:
     run_id = new_run_id()
-    checksum = hashlib.sha256(
-        json.dumps(CALCULATED_METRICS, sort_keys=True).encode("utf-8")
-    ).hexdigest()
+    checksum = hashlib.sha256(json.dumps(CALCULATED_METRICS, sort_keys=True).encode("utf-8")).hexdigest()
     conn = connect(db_path)
     try:
         init_schema(conn)
@@ -121,7 +119,9 @@ def _insert_operating_margin(conn) -> int:
     for provider_id, year, scope, operating_result, revenue_value in rows:
         dimensions_json = json_dumps({"calculation": "operating_margin"})
         value = 100 * float(operating_result) / float(revenue_value)
-        fact_rows.append(_fact_tuple(provider_id, "calc_operating_margin", year, scope, value, "percent", dimensions_json))
+        fact_rows.append(
+            _fact_tuple(provider_id, "calc_operating_margin", year, scope, value, "percent", dimensions_json)
+        )
     _insert_fact_rows(conn, fact_rows)
     return len(fact_rows)
 
@@ -145,7 +145,17 @@ def _insert_research_share(conn) -> int:
     for provider_id, year, research_income, revenue_value in rows:
         dimensions_json = json_dumps({"calculation": "research_income_share_of_revenue"})
         value = 100 * float(research_income) / (float(revenue_value) * 1000)
-        fact_rows.append(_fact_tuple(provider_id, "calc_research_income_share_of_revenue", year, "Calculated", value, "percent", dimensions_json))
+        fact_rows.append(
+            _fact_tuple(
+                provider_id,
+                "calc_research_income_share_of_revenue",
+                year,
+                "Calculated",
+                value,
+                "percent",
+                dimensions_json,
+            )
+        )
     _insert_fact_rows(conn, fact_rows)
     return len(fact_rows)
 
@@ -168,7 +178,17 @@ def _insert_research_per_enrolment(conn) -> int:
     for provider_id, year, research_income, enrolments in rows:
         dimensions_json = json_dumps({"calculation": "research_income_per_enrolment"})
         value = float(research_income) / float(enrolments)
-        fact_rows.append(_fact_tuple(provider_id, "calc_research_income_per_enrolment", year, "Calculated", value, "AUD per student", dimensions_json))
+        fact_rows.append(
+            _fact_tuple(
+                provider_id,
+                "calc_research_income_per_enrolment",
+                year,
+                "Calculated",
+                value,
+                "AUD per student",
+                dimensions_json,
+            )
+        )
     _insert_fact_rows(conn, fact_rows)
     return len(fact_rows)
 

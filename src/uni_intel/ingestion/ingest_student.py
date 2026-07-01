@@ -322,9 +322,7 @@ def ingest_student(
                     "Department student statistics Excel workbook.",
                 ),
             )
-            staging_rows, facts_loaded, unmatched = _load_rows(
-                conn, rows, source_id, run_id, resolver
-            )
+            staging_rows, facts_loaded, unmatched = _load_rows(conn, rows, source_id, run_id, resolver)
             checks = _quality_checks(len(rows), staging_rows, facts_loaded, unmatched)
             checks.extend(metadata_quality_checks(conn))
             persist_quality_checks(conn, run_id, source_id, checks)
@@ -392,19 +390,14 @@ def build_student_sources() -> list[tuple[str, str, Path, object, str]]:
 
     for source_year in STUDENT_SECTION_YEARS:
         source_url = (
-            STUDENT_COMPLETIONS_2024_URL
-            if source_year == 2024
-            else resolve_student_section_xlsx_url(source_year, 14)
+            STUDENT_COMPLETIONS_2024_URL if source_year == 2024 else resolve_student_section_xlsx_url(source_year, 14)
         )
         file_extension = source_extension(source_url)
         sources.append(
             (
                 f"student_{source_year}_section_14_completions",
                 source_url,
-                RAW_DIR
-                / "student"
-                / str(source_year)
-                / f"section_14_completions_{source_year}.{file_extension}",
+                RAW_DIR / "student" / str(source_year) / f"section_14_completions_{source_year}.{file_extension}",
                 StudentCompletionsParser(
                     year=source_year,
                     parse_total_time_series=source_year == 2024,
@@ -425,15 +418,13 @@ def resolve_student_section_xlsx_url(year: int, section: int) -> str:
     annual_page = STUDENT_ANNUAL_PAGE_URLS[year]
     resource_page = find_link(
         annual_page,
-        lambda text, href: bool(re.search(rf"\bsection\s+{section}\b", text))
-        and str(year) in f"{text} {href}"
-        and "resources" in href,
+        lambda text, href: (
+            bool(re.search(rf"\bsection\s+{section}\b", text)) and str(year) in f"{text} {href}" and "resources" in href
+        ),
     )
     return find_link(
         resource_page,
-        lambda text, href: href.rstrip("/").endswith(("/xlsx", "/xls"))
-        or "xlsx" in text
-        or "xls" in text,
+        lambda text, href: href.rstrip("/").endswith(("/xlsx", "/xls")) or "xlsx" in text or "xls" in text,
     )
 
 
@@ -558,7 +549,9 @@ def _load_rows(
                 f"{row.reporting_year}-12-31",
                 "Student",
                 row.numeric_value,
-                "students" if "enrolments" in row.metric_id else ("EFTSL" if "eftsl" in row.metric_id else "completions"),
+                "students"
+                if "enrolments" in row.metric_id
+                else ("EFTSL" if "eftsl" in row.metric_id else "completions"),
                 row.row_number,
                 row.source_provider_name,
                 METRIC_LINE_ITEMS[row.metric_id],

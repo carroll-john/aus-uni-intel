@@ -203,10 +203,38 @@ def _load_rows(
 
 def _quality_checks(rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]) -> list[QualityCheck]:
     return [
-        QualityCheck("source_rows_parsed", "pass" if rows_parsed else "fail", "info" if rows_parsed else "error", str(rows_parsed), "> 0", "HERDC rows parsed."),
-        QualityCheck("staging_rows_loaded", "pass" if rows_parsed == staging_rows else "fail", "info" if rows_parsed == staging_rows else "error", str(staging_rows), str(rows_parsed), "Every parsed source row should be represented in staging."),
-        QualityCheck("facts_loaded", "pass" if facts_loaded else "fail", "info" if facts_loaded else "error", str(facts_loaded), "> 0", "Canonical HERDC facts loaded for matched providers."),
-        QualityCheck("unmatched_source_providers", "warn" if unmatched else "pass", "warning" if unmatched else "info", str(len(unmatched)), "0 public-university providers unmatched", ", ".join(unmatched) if unmatched else "All source provider names matched."),
+        QualityCheck(
+            "source_rows_parsed",
+            "pass" if rows_parsed else "fail",
+            "info" if rows_parsed else "error",
+            str(rows_parsed),
+            "> 0",
+            "HERDC rows parsed.",
+        ),
+        QualityCheck(
+            "staging_rows_loaded",
+            "pass" if rows_parsed == staging_rows else "fail",
+            "info" if rows_parsed == staging_rows else "error",
+            str(staging_rows),
+            str(rows_parsed),
+            "Every parsed source row should be represented in staging.",
+        ),
+        QualityCheck(
+            "facts_loaded",
+            "pass" if facts_loaded else "fail",
+            "info" if facts_loaded else "error",
+            str(facts_loaded),
+            "> 0",
+            "Canonical HERDC facts loaded for matched providers.",
+        ),
+        QualityCheck(
+            "unmatched_source_providers",
+            "warn" if unmatched else "pass",
+            "warning" if unmatched else "info",
+            str(len(unmatched)),
+            "0 public-university providers unmatched",
+            ", ".join(unmatched) if unmatched else "All source provider names matched.",
+        ),
     ]
 
 

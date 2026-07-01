@@ -4,7 +4,7 @@ API_HOST := 127.0.0.1
 API_PORT := 8000
 WEB_PORT := 3000
 
-.PHONY: bootstrap web-install demo ingest-finance ingest-all test lint api web dev verify archive-db deploy-check clean-db
+.PHONY: bootstrap web-install demo ingest-finance ingest-all test lint format format-check typecheck-py api web dev verify archive-db deploy-check clean-db
 
 .venv/.installed: pyproject.toml
 	python3 -m venv .venv
@@ -31,6 +31,15 @@ test: bootstrap
 lint: bootstrap
 	$(PYTHON) -m ruff check src tests
 
+format: bootstrap
+	$(PYTHON) -m ruff format src tests
+
+format-check: bootstrap
+	$(PYTHON) -m ruff format --check src tests
+
+typecheck-py: bootstrap
+	$(PYTHON) -m pyright
+
 api: bootstrap
 	$(PYTHON) -m uvicorn uni_intel.api.main:app --reload --host $(API_HOST) --port $(API_PORT)
 
@@ -42,7 +51,7 @@ dev: bootstrap web-install ingest-all
 	$(PYTHON) -m uvicorn uni_intel.api.main:app --host $(API_HOST) --port $(API_PORT) & \
 	cd apps/web && NEXT_PUBLIC_API_BASE_URL=http://$(API_HOST):$(API_PORT) npm run dev
 
-verify: bootstrap web-install ingest-all test lint
+verify: bootstrap web-install ingest-all test lint format-check
 	cd apps/web && npm run lint && npm run typecheck && npm run build
 	@trap 'kill $$API_PID' EXIT; \
 	$(PYTHON) -m uvicorn uni_intel.api.main:app --host $(API_HOST) --port $(API_PORT) >/tmp/uni-intel-api.log 2>&1 & \

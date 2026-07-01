@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-from typing import Iterable
 
 import duckdb
 
@@ -54,18 +54,14 @@ class ProviderResolver:
             )
 
     @classmethod
-    def from_connection(cls, conn: duckdb.DuckDBPyConnection) -> "ProviderResolver":
+    def from_connection(cls, conn: duckdb.DuckDBPyConnection) -> ProviderResolver:
         providers = [
             {"provider_id": row[0], "provider_name": row[1]}
-            for row in conn.execute(
-                "SELECT provider_id, provider_name FROM providers"
-            ).fetchall()
+            for row in conn.execute("SELECT provider_id, provider_name FROM providers").fetchall()
         ]
         aliases = [
             {"alias": row[0], "provider_id": row[1], "confidence": row[2]}
-            for row in conn.execute(
-                "SELECT alias, provider_id, confidence FROM provider_aliases"
-            ).fetchall()
+            for row in conn.execute("SELECT alias, provider_id, confidence FROM provider_aliases").fetchall()
         ]
         return cls(providers, aliases)
 
@@ -75,11 +71,8 @@ class ProviderResolver:
         providers: Iterable[tuple[str, str]],
         aliases: Iterable[tuple[str, str, float]] = (),
         fuzzy_threshold: float = 0.94,
-    ) -> "ProviderResolver":
-        provider_records = [
-            {"provider_id": provider_id, "provider_name": name}
-            for provider_id, name in providers
-        ]
+    ) -> ProviderResolver:
+        provider_records = [{"provider_id": provider_id, "provider_name": name} for provider_id, name in providers]
         alias_records = [
             {"alias": alias, "provider_id": provider_id, "confidence": confidence}
             for alias, provider_id, confidence in aliases

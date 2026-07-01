@@ -237,9 +237,7 @@ def persist_quality_checks(
     rows = []
     source_key = source_file_id_value or "no-source-file"
     for check in checks:
-        check_id = hashlib.sha1(
-            f"{run_id}|{source_key}|{check.check_name}".encode("utf-8")
-        ).hexdigest()
+        check_id = hashlib.sha1(f"{run_id}|{source_key}|{check.check_name}".encode()).hexdigest()
         rows.append(
             (
                 check_id,

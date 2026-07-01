@@ -227,13 +227,50 @@ def _raw_filename(year: int, url: str) -> str:
     return f"ses_{year}_national_report_tables{suffix}"
 
 
-def _quality_checks(year: int, rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]) -> list[QualityCheck]:
+def _quality_checks(
+    year: int, rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]
+) -> list[QualityCheck]:
     return [
-        QualityCheck("source_rows_parsed", "pass" if rows_parsed else "fail", "info" if rows_parsed else "error", str(rows_parsed), "> 0", f"{year} QILT SES rows parsed from national report tables."),
-        QualityCheck("staging_rows_loaded", "pass" if rows_parsed == staging_rows else "fail", "info" if rows_parsed == staging_rows else "error", str(staging_rows), str(rows_parsed), f"Every parsed {year} source row should be represented in staging."),
-        QualityCheck("facts_loaded", "pass" if facts_loaded else "fail", "info" if facts_loaded else "error", str(facts_loaded), "> 0", f"Canonical {year} QILT facts loaded for matched providers."),
-        QualityCheck("unmatched_source_providers", "warn" if unmatched else "pass", "warning" if unmatched else "info", str(len(unmatched)), "0 public-university providers unmatched", ", ".join(unmatched) if unmatched else f"All {year} source provider names matched."),
-        QualityCheck("qilt_confidence_intervals_present", "pass", "info", "stored", "stored", "90% confidence interval bounds are stored in dimensions_json and staging columns where published."),
+        QualityCheck(
+            "source_rows_parsed",
+            "pass" if rows_parsed else "fail",
+            "info" if rows_parsed else "error",
+            str(rows_parsed),
+            "> 0",
+            f"{year} QILT SES rows parsed from national report tables.",
+        ),
+        QualityCheck(
+            "staging_rows_loaded",
+            "pass" if rows_parsed == staging_rows else "fail",
+            "info" if rows_parsed == staging_rows else "error",
+            str(staging_rows),
+            str(rows_parsed),
+            f"Every parsed {year} source row should be represented in staging.",
+        ),
+        QualityCheck(
+            "facts_loaded",
+            "pass" if facts_loaded else "fail",
+            "info" if facts_loaded else "error",
+            str(facts_loaded),
+            "> 0",
+            f"Canonical {year} QILT facts loaded for matched providers.",
+        ),
+        QualityCheck(
+            "unmatched_source_providers",
+            "warn" if unmatched else "pass",
+            "warning" if unmatched else "info",
+            str(len(unmatched)),
+            "0 public-university providers unmatched",
+            ", ".join(unmatched) if unmatched else f"All {year} source provider names matched.",
+        ),
+        QualityCheck(
+            "qilt_confidence_intervals_present",
+            "pass",
+            "info",
+            "stored",
+            "stored",
+            "90% confidence interval bounds are stored in dimensions_json and staging columns where published.",
+        ),
     ]
 
 

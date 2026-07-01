@@ -239,7 +239,7 @@ def overview():
               AND f.reporting_year = (SELECT MAX(reporting_year) FROM facts WHERE facts.metric_id = f.metric_id)
             QUALIFY ROW_NUMBER() OVER (PARTITION BY f.metric_id ORDER BY f.value DESC) <= 5
             ORDER BY f.metric_id, f.value DESC
-            """
+            """,
         )
         latest_quality = _rows_to_dicts(
             conn,
@@ -524,7 +524,9 @@ def provider_metric_insight(
         national_rows = _rank_scope(rows, provider_id, selected_year)
         mission_group = provider.get("mission_group")
         state = provider.get("state")
-        mission_rows = _rank_scope(rows, provider_id, selected_year, mission_group=str(mission_group)) if mission_group else []
+        mission_rows = (
+            _rank_scope(rows, provider_id, selected_year, mission_group=str(mission_group)) if mission_group else []
+        )
         state_rows = _rank_scope(rows, provider_id, selected_year, state=str(state)) if state else []
 
         ranks = {
@@ -532,11 +534,15 @@ def provider_metric_insight(
             "mission_group": {
                 **(_rank_for_value(mission_rows, provider_id, order) or {}),
                 "label": mission_group,
-            } if mission_group else None,
+            }
+            if mission_group
+            else None,
             "state": {
                 **(_rank_for_value(state_rows, provider_id, order) or {}),
                 "label": state,
-            } if state else None,
+            }
+            if state
+            else None,
         }
         medians = {
             "national": _median_for_rows(national_rows),
@@ -553,7 +559,9 @@ def provider_metric_insight(
 
         movement_reference_year = selected_year - 5 if selected_year - 5 in by_year else min(by_year)
         current_rank = ranks["national"]["rank"] if ranks["national"] else None
-        previous_rank_payload = _rank_for_value(_rank_scope(rows, provider_id, movement_reference_year), provider_id, order)
+        previous_rank_payload = _rank_for_value(
+            _rank_scope(rows, provider_id, movement_reference_year), provider_id, order
+        )
         rank_move = None
         if current_rank is not None and previous_rank_payload:
             rank_move = {

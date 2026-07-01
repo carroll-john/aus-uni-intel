@@ -124,9 +124,7 @@ def test_student_section_parser_reads_postgraduate_level_metrics(tmp_path: Path)
         "student_postgraduate_coursework_enrolments",
         "student_postgraduate_total_enrolments",
     }
-    assert {row.metric_id: row.numeric_value for row in rows}[
-        "student_postgraduate_total_enrolments"
-    ] == 3
+    assert {row.metric_id: row.numeric_value for row in rows}["student_postgraduate_total_enrolments"] == 3
 
 
 def test_student_section_parser_reads_total_eftsl_column(tmp_path: Path) -> None:
@@ -208,9 +206,7 @@ def test_student_completions_parser_reads_postgraduate_level_metrics(tmp_path: P
         "student_postgraduate_research_completions",
         "student_postgraduate_coursework_completions",
     }
-    assert {row.metric_id: row.numeric_value for row in rows}[
-        "student_postgraduate_coursework_completions"
-    ] == 120
+    assert {row.metric_id: row.numeric_value for row in rows}["student_postgraduate_coursework_completions"] == 120
 
 
 def _section_workbook(tmp_path: Path, sheet_name: str, title: str, total_column_name: str) -> Path:
