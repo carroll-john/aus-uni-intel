@@ -1,0 +1,38 @@
+---
+description: Core architecture and coding conventions for the aus-uni-intel repo
+alwaysApply: true
+---
+
+# Project conventions
+
+This repo ingests Australian higher-education public data into a DuckDB warehouse,
+serves it via FastAPI, and renders it in a Next.js dashboard. See `AGENTS.md` for
+the full guide.
+
+## Architecture boundaries
+
+- Parsers (`src/uni_intel/ingestion/parsers/`) are pure: file bytes to dataclass
+  rows. No network, no DB, no side effects.
+- Runners (`src/uni_intel/ingestion/ingest_*.py`) own I/O: download, stage,
+  resolve providers, load facts, write quality checks.
+- Shared ETL helpers live in `src/uni_intel/ingestion/common.py`. Do not fork
+  private copies of checksum/id/upsert/quality logic into individual runners.
+- The API is layered: `api/app.py` (factory) -> `api/routers/*` (HTTP) ->
+  `api/repositories/*` (SQL) -> `api/analytics.py` (pure math). Keep SQL out of
+  routers and keep routers thin.
+
+## Data access
+
+- Always go through `src/uni_intel/db.py` for DuckDB connections; use its context
+  manager rather than calling `duckdb.connect` directly.
+- Use parameterized SQL (`?` placeholders). Never interpolate query/user values
+  into SQL strings.
+- The API opens connections read-only.
+
+## Style
+
+- Keep modules focused and under ~400 lines; split when they grow past that.
+- Public functions get type hints. New API responses get Pydantic models.
+- Do not change the public HTTP API contract without updating the API tests.
+- Regenerate/refresh the warehouse archive only via `make ingest-all` +
+  `make archive-db`; do not hand-edit `data/warehouse/*`.

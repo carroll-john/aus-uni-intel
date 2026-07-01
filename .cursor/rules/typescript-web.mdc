@@ -1,0 +1,25 @@
+---
+description: Conventions for the Next.js web app in apps/web
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Web app conventions (apps/web)
+
+- App Router only. Pages are async Server Components that fetch via `lib/api.ts`;
+  push interactivity into small Client Components.
+- Filter/selection state lives in the URL (search params), not global state.
+- Use the typed client in `lib/api.ts`; do not call `fetch` to the backend
+  directly from pages/components.
+- Shared parsing lives in `lib/search-params.ts`; shared domain defaults live in
+  `lib/constants.ts`. Do not hard-code metric ids, provider ids, default years,
+  or chart colors inline.
+- Reuse shared components (e.g. `KpiCard`) instead of duplicating markup across
+  pages. Keep components under ~300 lines.
+- Wrap external URLs in `SafeExternalLink` / validate via `lib/safe-url.ts`.
+- TypeScript is strict; do not introduce `any`.
+
+# Exhaustive switch
+
+In switch statements over discriminated unions or enums, use a `never` check in
+the default case so newly added variants fail to compile until handled.
