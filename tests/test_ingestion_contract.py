@@ -11,6 +11,7 @@ from uni_intel.ingestion import ingest_student as ingest_student_module
 from uni_intel.ingestion.common import upsert_metrics
 from uni_intel.ingestion.ingest_finance import ingest_finance
 from uni_intel.ingestion.metrics import CALCULATED_METRICS, STUDENT_METRICS
+from uni_intel.ingestion.parsers.student import StudentSectionParser
 from uni_intel.seed import seed_providers
 
 
@@ -78,7 +79,7 @@ def test_student_section_ingestion_is_idempotent_and_purges_summary_facts(
                 "student_2024_section_2_all_students",
                 "local://student-section-2",
                 source,
-                ingest_student_module.StudentSectionParser(
+                StudentSectionParser(
                     year=2024,
                     section=2,
                     sheet_name="2.5",

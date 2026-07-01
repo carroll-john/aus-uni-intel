@@ -7,10 +7,10 @@ from pathlib import Path
 from uni_intel.config import DB_PATH, HERDC_PUBLICATION_URL, HERDC_RESEARCH_INCOME_URL, RAW_DIR
 from uni_intel.db import connect, init_schema
 from uni_intel.ingestion.common import (
-    QualityCheck,
     SourceDataset,
     SourceFileMetadata,
     download_file,
+    insert_facts,
     json_dumps,
     metadata_quality_checks,
     new_run_id,
@@ -18,6 +18,7 @@ from uni_intel.ingestion.common import (
     sha256_file,
     source_file_id,
     stable_fact_id,
+    standard_quality_checks,
     upsert_metrics,
     upsert_source_dataset,
     upsert_source_file,
@@ -78,7 +79,14 @@ def ingest_herdc(
         upsert_metrics(conn, HERDC_METRICS)
         resolver = ProviderResolver.from_connection(conn)
         staging_rows, facts_loaded, unmatched = _load_rows(conn, rows, source_id, run_id, resolver)
-        checks = _quality_checks(len(rows), staging_rows, facts_loaded, unmatched)
+        checks = standard_quality_checks(
+            len(rows),
+            staging_rows,
+            facts_loaded,
+            unmatched,
+            parsed_detail="HERDC rows parsed.",
+            facts_detail="Canonical HERDC facts loaded for matched providers.",
+        )
         checks.extend(metadata_quality_checks(conn))
         persist_quality_checks(conn, run_id, source_id, checks)
     finally:
@@ -186,56 +194,8 @@ def _load_rows(
         """,
         staging_rows,
     )
-    if fact_rows:
-        conn.executemany(
-            """
-            INSERT INTO facts (
-                fact_id, provider_id, metric_id, source_file_id, reporting_year,
-                period_start, period_end, dimension_scope, value, unit,
-                source_row_number, source_provider_name, source_line_item,
-                dimensions_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            fact_rows,
-        )
+    insert_facts(conn, fact_rows)
     return len(staging_rows), len(fact_rows), sorted(unmatched)
-
-
-def _quality_checks(rows_parsed: int, staging_rows: int, facts_loaded: int, unmatched: list[str]) -> list[QualityCheck]:
-    return [
-        QualityCheck(
-            "source_rows_parsed",
-            "pass" if rows_parsed else "fail",
-            "info" if rows_parsed else "error",
-            str(rows_parsed),
-            "> 0",
-            "HERDC rows parsed.",
-        ),
-        QualityCheck(
-            "staging_rows_loaded",
-            "pass" if rows_parsed == staging_rows else "fail",
-            "info" if rows_parsed == staging_rows else "error",
-            str(staging_rows),
-            str(rows_parsed),
-            "Every parsed source row should be represented in staging.",
-        ),
-        QualityCheck(
-            "facts_loaded",
-            "pass" if facts_loaded else "fail",
-            "info" if facts_loaded else "error",
-            str(facts_loaded),
-            "> 0",
-            "Canonical HERDC facts loaded for matched providers.",
-        ),
-        QualityCheck(
-            "unmatched_source_providers",
-            "warn" if unmatched else "pass",
-            "warning" if unmatched else "info",
-            str(len(unmatched)),
-            "0 public-university providers unmatched",
-            ", ".join(unmatched) if unmatched else "All source provider names matched.",
-        ),
-    ]
 
 
 def parse_args() -> argparse.Namespace:
