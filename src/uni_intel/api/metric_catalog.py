@@ -51,6 +51,62 @@ def unavailable(
     )
 
 
+def catalog_row(item: CatalogMetric, live: dict[str, object] | None) -> dict[str, object]:
+    """Merge a curated catalog entry with its live warehouse metric row (if any)."""
+    if live:
+        return {
+            **live,
+            "metric_name": item.label,
+            "raw_metric_name": live["metric_name"],
+            "metric_group": item.catalog_group,
+            "raw_metric_group": live["metric_group"],
+            "catalog_group": item.catalog_group,
+            "catalog_item_id": item.item_id,
+            "preferred_scope": item.preferred_scope,
+            "source_status": item.source_status,
+            "source_note": item.source_note,
+            "selectable": True,
+        }
+    return {
+        "metric_id": None,
+        "metric_name": item.label,
+        "raw_metric_name": None,
+        "metric_group": item.catalog_group,
+        "raw_metric_group": None,
+        "catalog_group": item.catalog_group,
+        "catalog_item_id": item.item_id,
+        "preferred_scope": item.preferred_scope,
+        "source_status": "missing" if item.source_status == "available" else item.source_status,
+        "source_note": item.source_note,
+        "unit": "",
+        "value_type": "",
+        "definition": item.source_note,
+        "source_agency": "",
+        "source_dataset": "Not available yet",
+        "source_table": None,
+        "source_line_item": None,
+        "is_calculated": item.source_status == "calculated_needed",
+        "calculation_method": None,
+        "selectable": False,
+    }
+
+
+def build_catalog_rows(
+    live_metrics: dict[str, dict[str, object]],
+    include_missing: bool,
+) -> list[dict[str, object]]:
+    """Filter and shape the curated catalog for the ``/metric-catalog`` endpoint."""
+    catalog_rows: list[dict[str, object]] = []
+    for item in CURATED_METRIC_CATALOG:
+        live = live_metrics.get(item.metric_id) if item.metric_id else None
+        if item.source_status == "available" and live is None and not include_missing:
+            continue
+        if item.source_status != "available" and not include_missing:
+            continue
+        catalog_rows.append(catalog_row(item, live))
+    return catalog_rows
+
+
 CURATED_METRIC_CATALOG: list[CatalogMetric] = [
     available(
         "total_enrolments",
