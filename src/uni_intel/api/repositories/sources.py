@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
+
 import duckdb
 
 from uni_intel.api.repositories.base import rows_to_dicts
 
 
-def list_sources(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def list_sources(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         """
@@ -18,7 +20,7 @@ def list_sources(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
     )
 
 
-def list_quality_checks(conn: duckdb.DuckDBPyConnection, limit: int) -> list[dict[str, object]]:
+def list_quality_checks(conn: duckdb.DuckDBPyConnection, limit: int) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         """

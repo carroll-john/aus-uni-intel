@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from uni_intel.config import DB_PATH, QILT_SES_PUBLICATION_URL, QILT_SES_URLS, RAW_DIR
 from uni_intel.db import connect, init_schema
@@ -37,7 +38,7 @@ METRIC_LINE_ITEMS = {str(metric["metric_id"]): str(metric["source_line_item"]) f
 
 def ingest_qilt(db_path: Path = DB_PATH, force_download: bool = False) -> dict[str, object]:
     run_id = new_run_id()
-    year_results: list[dict[str, object]] = []
+    year_results: list[dict[str, Any]] = []
     all_checks: list[QualityCheck] = []
     source_ids: list[str] = []
 

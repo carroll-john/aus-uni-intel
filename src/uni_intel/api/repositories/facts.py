@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import duckdb
 
 from uni_intel.api.analytics import canonical_scope_qualifier, metric_filter_sql
@@ -16,7 +18,7 @@ def rankings(
     state: str | None,
     limit: int,
     order: str,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     direction = "ASC" if order == "asc" else "DESC"
     filters = [metric_filter_sql(metric_ids), "p.provider_type = 'university'"]
     params: list[object] = list(metric_ids)
@@ -62,7 +64,7 @@ def benchmarks(
     scope: str | None,
     mission_group: str | None,
     state: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     group_column = "p.mission_group" if group_by == "mission_group" else "p.state"
     filters = [
         metric_filter_sql(metric_ids),
@@ -121,14 +123,14 @@ def compare(
     *,
     year: int | None,
     scope: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     provider_placeholders = ", ".join("?" for _ in provider_list)
     metric_placeholders = ", ".join("?" for _ in query_metric_list)
     filters = [
         f"f.provider_id IN ({provider_placeholders})",
         f"f.metric_id IN ({metric_placeholders})",
     ]
-    params: list[object] = list(provider_list) + list(query_metric_list)
+    params: list[object] = [*provider_list, *query_metric_list]
     if year is not None:
         filters.append("f.reporting_year = ?")
         params.append(year)
@@ -158,7 +160,7 @@ def trends(
     *,
     provider_id: str | None,
     scope: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     filters = [metric_filter_sql(metric_ids)]
     params: list[object] = list(metric_ids)
     if provider_id:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -182,7 +182,7 @@ class StudentSectionParser:
         return parsed
 
     def _parse_xls(self, path: Path | str) -> list[StudentRawRow]:
-        workbook = xlrd.open_workbook(path)
+        workbook = xlrd.open_workbook(str(path))
         sheet_name = find_xls_sheet_name(workbook, f"Table {self.sheet_name}")
 
         worksheet = workbook.sheet_by_name(sheet_name)
@@ -259,7 +259,7 @@ class StudentSectionParser:
     def _parse_metric_values(
         self,
         *,
-        row: tuple[object, ...] | list[object],
+        row: Sequence[object],
         row_number: int,
         state: object,
         provider: str,
@@ -415,7 +415,7 @@ class StudentCompletionsParser:
         return parsed
 
     def _parse_xls(self, path: Path | str) -> list[StudentRawRow]:
-        workbook = xlrd.open_workbook(path)
+        workbook = xlrd.open_workbook(str(path))
         rows = self._parse_total_time_series_xls(workbook) if self.parse_total_time_series else []
         if self.parse_level_metrics:
             rows.extend(self._parse_level_metrics_xls(workbook))

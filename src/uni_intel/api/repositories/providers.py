@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import duckdb
 
 from uni_intel.api.analytics import canonical_scope_qualifier, metric_filter_sql
@@ -11,7 +13,7 @@ _PROVIDER_COLUMNS = """
 """
 
 
-def list_providers(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def list_providers(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         f"""
@@ -22,7 +24,7 @@ def list_providers(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
     )
 
 
-def get_provider(conn: duckdb.DuckDBPyConnection, provider_id: str) -> dict[str, object] | None:
+def get_provider(conn: duckdb.DuckDBPyConnection, provider_id: str) -> dict[str, Any] | None:
     rows = rows_to_dicts(
         conn,
         f"SELECT {_PROVIDER_COLUMNS} FROM providers WHERE provider_id = ?",
@@ -36,7 +38,7 @@ def provider_facts(
     provider_id: str,
     year: int | None,
     scope: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     filters = ["f.provider_id = ?"]
     params: list[object] = [provider_id]
     if year is not None:
@@ -66,7 +68,7 @@ def metric_insight_rows(
     conn: duckdb.DuckDBPyConnection,
     metric_ids: list[str],
     scope: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     filters = [metric_filter_sql(metric_ids), "p.provider_type = 'university'"]
     params: list[object] = list(metric_ids)
     if scope is not None:

@@ -7,6 +7,7 @@ history aliasing. Everything here is unit-testable without a connection.
 from __future__ import annotations
 
 from statistics import median
+from typing import Any
 
 TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation"
 LEGACY_TOTAL_REVENUE_METRIC_ID = "finance_total_revenues_from_continuing_operations"
@@ -42,10 +43,10 @@ def metric_filter_sql(metric_ids: list[str]) -> str:
 
 
 def normalize_metric_rows(
-    rows: list[dict[str, object]],
+    rows: list[dict[str, Any]],
     requested_metric_id: str,
     canonical_metric_name: str | None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     """Re-map legacy metric ids/names onto the requested canonical id so that
     renamed metrics present a continuous history."""
     alias_metric_ids = METRIC_HISTORY_ALIASES.get(requested_metric_id)
@@ -90,8 +91,8 @@ def canonical_scope_qualifier(scope: str | None, partition_columns: list[str]) -
         """
 
 
-def rank_for_value(rows: list[dict[str, object]], provider_id: str, order: str = "desc") -> dict[str, object] | None:
-    scoped_rows: list[dict[str, object]] = []
+def rank_for_value(rows: list[dict[str, Any]], provider_id: str, order: str = "desc") -> dict[str, Any] | None:
+    scoped_rows: list[dict[str, Any]] = []
     for row in rows:
         value = safe_float(row.get("value"))
         if value is not None:
@@ -99,28 +100,28 @@ def rank_for_value(rows: list[dict[str, object]], provider_id: str, order: str =
     current = next((row for row in scoped_rows if row["provider_id"] == provider_id), None)
     if current is None:
         return None
-    current_value = float(current["value"])  # type: ignore[arg-type]
+    current_value = float(current["value"])
     if order == "asc":
-        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) < current_value)  # type: ignore[arg-type]
+        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) < current_value)
     else:
-        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) > current_value)  # type: ignore[arg-type]
+        rank = 1 + sum(1 for row in scoped_rows if float(row["value"]) > current_value)
     return {"rank": rank, "of": len(scoped_rows), "value": current_value}
 
 
-def median_for_rows(rows: list[dict[str, object]]) -> float | None:
+def median_for_rows(rows: list[dict[str, Any]]) -> float | None:
     values = [value for row in rows if (value := safe_float(row.get("value"))) is not None]
     return float(median(values)) if values else None
 
 
 def rank_scope(
-    rows: list[dict[str, object]],
+    rows: list[dict[str, Any]],
     provider_id: str,
     year: int,
     *,
     mission_group: str | None = None,
     state: str | None = None,
-) -> list[dict[str, object]]:
-    scoped = [row for row in rows if int(row["reporting_year"]) == year]  # type: ignore[arg-type]
+) -> list[dict[str, Any]]:
+    scoped = [row for row in rows if int(row["reporting_year"]) == year]
     if mission_group is not None:
         scoped = [row for row in scoped if row.get("mission_group") == mission_group]
     if state is not None:
@@ -128,12 +129,12 @@ def rank_scope(
     return scoped
 
 
-def change_payload(current_value: float, previous_row: dict[str, object]) -> dict[str, object] | None:
+def change_payload(current_value: float, previous_row: dict[str, Any]) -> dict[str, Any] | None:
     previous_value = safe_float(previous_row.get("value"))
     if previous_value is None or previous_value == 0:
         return None
     return {
-        "year": int(previous_row["reporting_year"]),  # type: ignore[arg-type]
+        "year": int(previous_row["reporting_year"]),
         "from_value": previous_value,
         "absolute": current_value - previous_value,
         "percent": ((current_value - previous_value) / abs(previous_value)) * 100,

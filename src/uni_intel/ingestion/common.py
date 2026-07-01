@@ -237,8 +237,14 @@ def standard_quality_checks(
     return checks
 
 
+def _scalar_int(conn: duckdb.DuckDBPyConnection, query: str) -> int:
+    row = conn.execute(query).fetchone()
+    return int(row[0]) if row else 0
+
+
 def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityCheck]:
-    missing_metric_metadata = conn.execute(
+    missing_metric_metadata = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM metrics
@@ -249,18 +255,20 @@ def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityChec
            OR source_dataset IS NULL
            OR TRIM(source_dataset) = ''
            OR (is_calculated = TRUE AND calculation_method IS NULL)
-        """
-    ).fetchone()[0]
-    missing_fact_sources = conn.execute(
+        """,
+    )
+    missing_fact_sources = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM facts
         WHERE source_file_id IS NULL
            OR source_line_item IS NULL
            OR TRIM(source_line_item) = ''
-        """
-    ).fetchone()[0]
-    duplicate_facts = conn.execute(
+        """,
+    )
+    duplicate_facts = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM (
@@ -270,8 +278,8 @@ def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityChec
             GROUP BY 1, 2, 3, 4, 5, 6
             HAVING COUNT(*) > 1
         )
-        """
-    ).fetchone()[0]
+        """,
+    )
     return [
         QualityCheck(
             "metrics_have_sources_and_definitions",

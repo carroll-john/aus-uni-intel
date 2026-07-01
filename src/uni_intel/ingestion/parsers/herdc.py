@@ -58,7 +58,7 @@ class HerdcResearchIncomeParser:
                         hep_code=str(hep_code or ""),
                         source_provider_name=str(provider).strip(),
                         metric_id=metric_id,
-                        reporting_year=int(year),
+                        reporting_year=int(year),  # type: ignore[arg-type]  # workbook cell value
                         raw_value=str(raw_value),
                         numeric_value=numeric_value,
                         dimensions={

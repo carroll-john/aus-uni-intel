@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
+
 import duckdb
 
 from uni_intel.api.repositories.base import rows_to_dicts, single_value
 
 
-def summary(conn: duckdb.DuckDBPyConnection) -> dict[str, object]:
+def summary(conn: duckdb.DuckDBPyConnection) -> dict[str, Any]:
     return {
         "latest_year": single_value(conn, "SELECT MAX(reporting_year) FROM facts"),
         "providers": single_value(
@@ -18,7 +20,7 @@ def summary(conn: duckdb.DuckDBPyConnection) -> dict[str, object]:
     }
 
 
-def kpis(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def kpis(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         """
@@ -47,7 +49,7 @@ def kpis(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
     )
 
 
-def top_rankings(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def top_rankings(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         """
@@ -71,7 +73,7 @@ def top_rankings(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
     )
 
 
-def latest_quality(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def latest_quality(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         """

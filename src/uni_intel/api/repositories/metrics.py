@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import duckdb
 
 from uni_intel.api.repositories.base import rows_to_dicts, single_value
@@ -11,7 +13,7 @@ _METRIC_COLUMNS = """
 """
 
 
-def list_metrics(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+def list_metrics(conn: duckdb.DuckDBPyConnection) -> list[dict[str, Any]]:
     return rows_to_dicts(
         conn,
         f"""
@@ -25,7 +27,7 @@ def list_metrics(conn: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
 def live_metrics_by_id(
     conn: duckdb.DuckDBPyConnection,
     metric_ids: list[str],
-) -> dict[str, dict[str, object]]:
+) -> dict[str, dict[str, Any]]:
     if not metric_ids:
         return {}
     placeholders = ", ".join("?" for _ in metric_ids)
@@ -49,7 +51,7 @@ def canonical_metric_name(conn: duckdb.DuckDBPyConnection, metric_id: str) -> st
 def distinct_years(
     conn: duckdb.DuckDBPyConnection,
     metric_ids: list[str] | None = None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     if metric_ids:
         placeholders = ", ".join("?" for _ in metric_ids)
         return rows_to_dicts(
@@ -63,7 +65,7 @@ def distinct_years(
 def distinct_scopes(
     conn: duckdb.DuckDBPyConnection,
     metric_ids: list[str] | None = None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     if metric_ids:
         placeholders = ", ".join("?" for _ in metric_ids)
         return rows_to_dicts(

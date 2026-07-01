@@ -76,7 +76,9 @@ class QiltSesParser:
             metric_columns: list[tuple[int, str, str]] = []
             for index, header in enumerate(headers):
                 if header in QILT_COLUMNS:
-                    metric_columns.append((index, QILT_COLUMNS[header], str(header).replace(" *", "")))
+                    metric_columns.append(
+                        (index, QILT_COLUMNS[header], str(header).replace(" *", ""))  # type: ignore[index]
+                    )
 
             for row_number, row in enumerate(table_rows[header_row_index + 1 :], start=header_row_index + 2):
                 provider = row[provider_column] if len(row) > provider_column else None

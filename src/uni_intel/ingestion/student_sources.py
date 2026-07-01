@@ -248,8 +248,11 @@ SECTION_SPECS = {
 }
 
 
-def build_student_sources() -> list[tuple[str, str, Path, object, str]]:
-    sources: list[tuple[str, str, Path, object, str]] = []
+StudentParser = StudentSectionParser | StudentCompletionsParser
+
+
+def build_student_sources() -> list[tuple[str, str, Path, StudentParser, str]]:
+    sources: list[tuple[str, str, Path, StudentParser, str]] = []
     for source_year in STUDENT_SECTION_YEARS:
         for section, spec in SECTION_SPECS.items():
             source_url = resolve_student_section_xlsx_url(source_year, section)

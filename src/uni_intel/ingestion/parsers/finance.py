@@ -129,7 +129,7 @@ class FinanceParser:
         )
 
 
-def parse_numeric_value(value: str, row_number: int | None = None) -> float:
+def parse_numeric_value(value: object, row_number: int | None = None) -> float:
     if isinstance(value, int | float):
         return float(value)
 
@@ -150,7 +150,7 @@ def parse_numeric_value(value: str, row_number: int | None = None) -> float:
 
 def parse_year(value: object, source_name: str) -> int:
     try:
-        return int(value)
+        return int(value)  # type: ignore[arg-type]  # deliberate coercion, guarded by except
     except (TypeError, ValueError) as exc:
         raise FinanceParseError(f"{source_name} has invalid year: {value}") from exc
 
