@@ -16,14 +16,14 @@ const config: Config = {
         coral: "#e35a4f",
         cream: "#f6f1e7",
         paper: "#ffffff",
-        cyan: "#02c6fa"
+        cyan: "#02c6fa",
       },
       boxShadow: {
-        panel: "0 2px 8px rgba(10, 31, 68, 0.10)"
-      }
-    }
+        panel: "0 2px 8px rgba(10, 31, 68, 0.10)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;

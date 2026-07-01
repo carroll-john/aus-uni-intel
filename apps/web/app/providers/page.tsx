@@ -4,7 +4,9 @@ import { getProviders } from "@/lib/api";
 export const dynamic = "force-dynamic";
 
 export default async function ProvidersPage() {
-  const providers = (await getProviders()).filter((provider) => provider.provider_type === "university");
+  const providers = (await getProviders()).filter(
+    (provider) => provider.provider_type === "university"
+  );
   return (
     <div className="space-y-5">
       <div>

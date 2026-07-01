@@ -3,7 +3,7 @@ const oneDecimalFormatter = new Intl.NumberFormat("en-AU", { maximumFractionDigi
 const currencyFormatter = new Intl.NumberFormat("en-AU", {
   style: "currency",
   currency: "AUD",
-  maximumFractionDigits: 0
+  maximumFractionDigits: 0,
 });
 
 export function formatValue(value: number | null | undefined, unit?: string) {
@@ -39,7 +39,7 @@ function formatCompactNumber(value: number) {
     { threshold: 1_000_000_000_000, suffix: "t" },
     { threshold: 1_000_000_000, suffix: "b" },
     { threshold: 1_000_000, suffix: "m" },
-    { threshold: 1_000, suffix: "k" }
+    { threshold: 1_000, suffix: "k" },
   ];
   const compactUnit = suffixes.find((item) => absValue >= item.threshold);
 

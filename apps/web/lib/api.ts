@@ -150,7 +150,8 @@ export type MetricInsight = {
   };
 };
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
   status: number;
@@ -208,7 +209,12 @@ export function getRankings(
 
 export function getBenchmarks(
   metricId: string,
-  options: { year?: string; scope?: string; groupBy?: "mission_group" | "state"; missionGroup?: string } = {}
+  options: {
+    year?: string;
+    scope?: string;
+    groupBy?: "mission_group" | "state";
+    missionGroup?: string;
+  } = {}
 ) {
   const params = new URLSearchParams({ metric_id: metricId });
   if (options.year) params.set("year", options.year);
@@ -222,7 +228,12 @@ export function getProfile(providerId: string) {
   return getJson<{ provider: Provider; facts: FactRow[] }>(`/provider/${providerId}/profile`);
 }
 
-export function getMetricInsight(providerId: string, metricId: string, year?: string, scope?: string) {
+export function getMetricInsight(
+  providerId: string,
+  metricId: string,
+  year?: string,
+  scope?: string
+) {
   const params = new URLSearchParams({ metric_id: metricId });
   if (year) params.set("year", year);
   if (scope) params.set("scope", scope);
@@ -232,7 +243,7 @@ export function getMetricInsight(providerId: string, metricId: string, year?: st
 export function getCompare(providerIds: string[], metricIds: string[], year?: string) {
   const params = new URLSearchParams({
     provider_ids: providerIds.join(","),
-    metric_ids: metricIds.join(",")
+    metric_ids: metricIds.join(","),
   });
   if (year) params.set("year", year);
   return getJson<FactRow[]>(`/compare?${params.toString()}`);
