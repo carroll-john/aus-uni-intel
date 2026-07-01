@@ -55,12 +55,13 @@ Run everything through the `Makefile` (it manages the Python venv in `.venv`).
 | `make lint` | Ruff lint (`src`, `tests`) |
 | `make format` | Ruff format (writes) |
 | `make format-check` | Ruff format check (CI-safe, no writes) |
-| `make typecheck-py` | Pyright type check of the Python package (advisory; being adopted incrementally) |
+| `make typecheck-py` | Pyright type check of the Python package |
 | `make dev` | Run API (`:8000`) + web (`:3000`) locally |
 | `make verify` | Full gate: ingest, test, lint, web lint/typecheck/build, smoke |
 
-Web-only (from `apps/web`): `npm run lint`, `npm run typecheck`, `npm run build`,
-`npm run smoke` (API availability check), `npm run format` / `npm run format:check`.
+Web-only (from `apps/web`): `npm run lint`, `npm run typecheck`, `npm run test`
+(Vitest unit tests), `npm run build`, `npm run smoke` (API availability check),
+`npm run format` / `npm run format:check`.
 
 ## Conventions
 

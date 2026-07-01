@@ -51,8 +51,8 @@ dev: bootstrap web-install ingest-all
 	$(PYTHON) -m uvicorn uni_intel.api.main:app --host $(API_HOST) --port $(API_PORT) & \
 	cd apps/web && NEXT_PUBLIC_API_BASE_URL=http://$(API_HOST):$(API_PORT) npm run dev
 
-verify: bootstrap web-install ingest-all test lint format-check
-	cd apps/web && npm run lint && npm run typecheck && npm run build
+verify: bootstrap web-install ingest-all test lint format-check typecheck-py
+	cd apps/web && npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build
 	@trap 'kill $$API_PID' EXIT; \
 	$(PYTHON) -m uvicorn uni_intel.api.main:app --host $(API_HOST) --port $(API_PORT) >/tmp/uni-intel-api.log 2>&1 & \
 	API_PID=$$!; \
