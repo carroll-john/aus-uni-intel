@@ -60,3 +60,19 @@ deploy-check: verify archive-db
 
 clean-db:
 	rm -f data/warehouse/university_intel.duckdb data/warehouse/prototype_check.duckdb
+
+.PHONY: spike
+spike: web-install
+	@echo "→ Fetching latest spike branch..."
+	git fetch origin cursor/a2ui-insight-composition-spike-f37e
+	git checkout cursor/a2ui-insight-composition-spike-f37e
+	git reset --hard origin/cursor/a2ui-insight-composition-spike-f37e
+	@echo "→ Installing web dependencies..."
+	cd apps/web && npm install
+	@echo "→ Freeing port $(WEB_PORT) if needed..."
+	-kill $$(lsof -t -i :$(WEB_PORT)) 2>/dev/null || true
+	@echo ""
+	@echo "✓ Ready. Open in Chrome: http://127.0.0.1:$(WEB_PORT)/spike/a2ui"
+	@echo "  (Leave this terminal open while testing. Press Ctrl+C to stop.)"
+	@echo ""
+	cd apps/web && NEXT_PUBLIC_API_BASE_URL=http://$(API_HOST):$(API_PORT) npm run dev
