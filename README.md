@@ -173,6 +173,86 @@ catalogue remains available through the “Advanced raw metrics” mode.
 - QILT currently ingests provider-level SES undergraduate and postgraduate coursework institution tables with 90% confidence intervals.
 - Some npm audit output currently flags Next.js bundled PostCSS; npm’s available fix is a breaking downgrade, so the app stays on the current supported Next.js release.
 
+## Data Picture Studio
+
+A prompt-driven feature at `/data-picture` (web) and `/datapicture/*` (API)
+that turns a free-text strategic question into a composed, source-traced
+data story: a headline insight, one or more charts/tables, evidence cards,
+data-quality caveats, a source trace, and follow-up prompts.
+
+It reuses the existing metric catalogue and query logic instead of adding a
+parallel data path:
+
+1. **Plan** (`src/uni_intel/api/datapicture/planner.py`) — a deterministic,
+   offline keyword/phrase matcher resolves the question into an intent
+   (`trend`, `ranking`, `mismatch`, `equity`, `outlier`, `quality`, or
+   `clarify`), one or two metrics from `/metric-catalog`, and any named
+   providers. This is intentionally rule-based rather than an LLM call: the
+   repo is local-first with zero AI dependencies today. `Planner` is a
+   `Protocol`, so a future LLM-backed planner could be swapped in later
+   without changing the composer or the API contract.
+2. **Compose** (`src/uni_intel/api/datapicture/composer.py`) — dispatches on
+   the resolved intent and calls the same query functions that back
+   `/rankings`, `/benchmarks`, `/compare`, `/trends`, `/quality` and
+   `/sources` directly as plain Python functions (see
+   `src/uni_intel/api/datapicture/queries.py`), rather than duplicating their
+   SQL or making a self-referential HTTP call. Two small additional
+   read-only, parameterized queries (source trace and quality-for-metric)
+   fill in provenance that those endpoints don't already expose in the
+   shape this feature needs.
+3. **Render** (`apps/web/app/data-picture/page.tsx` and
+   `apps/web/components/DataPicture/`) — the composed JSON is a list of
+   typed blocks (`InsightHeader`, `NarrativeBuilder`, `EvidenceCardGrid`,
+   `RankingBarChart`, `TrendChart`, `MismatchMatrix`, `EquityGapPanel`,
+   `OutlierExplorer`, `MetricComparisonTable`, `DataQualityPanel`,
+   `SourceTraceDrawer`, `FollowUpPromptRail`) mapped 1:1 to a fixed React
+   component catalogue via an exhaustive switch in `DataPictureRenderer.tsx`.
+   Chart/table blocks are shaped to match the existing `ChartPanels.tsx` and
+   `DataTable.tsx` components exactly, so ranking and trend blocks reuse
+   those components directly instead of introducing new chart code.
+
+### API
+
+- `GET /datapicture/examples` — the three canned example questions (trend,
+  ranking, mismatch) shown as quick-start chips. These are example
+  *questions*, not canned output: clicking one runs the same live
+  planner+composer pipeline against the DuckDB warehouse as any typed
+  question.
+- `GET /datapicture/compose?q=<question>&year=<optional>` — composes and
+  returns a `DataPicture` JSON payload. All underlying queries are read-only
+  (DuckDB is opened `read_only=True`) and parameterized; the question text
+  itself is only used for keyword matching against known metric/provider
+  values already in the database, never interpolated into SQL.
+
+### Known limitations of the rule-based planner
+
+- Metric matching is a heuristic (inverse-document-frequency-weighted word
+  overlap over `metric_catalog` labels), not exact NLU — ambiguous phrasing
+  can occasionally resolve to an adjacent metric.
+- Equity metrics (low-SES, First Nations, regional/remote, CALD, disability
+  shares) are not ingested yet (see Known Limitations above), so the
+  `equity` intent always returns the metric backlog with source notes
+  instead of numbers.
+- Provider name matching is token-overlap plus a small hardcoded
+  abbreviation map (UNSW, ANU, RMIT, etc.), not the ingestion-only
+  `provider_aliases` table.
+
+### Adding a new data picture recipe
+
+1. If the question needs a new intent, add its keyword/phrase list to
+   `_INTENT_KEYWORDS` in `planner.py` (or a new regex pattern, as done for
+   "X but low Y" mismatch phrasing).
+2. Add a `_build_<intent>` function in `composer.py` that calls into
+   `queries.py` (add a new read-only query function there only if no
+   existing one returns the shape you need) and returns a `DataPicture`.
+3. If you need a new visual block type, add it to `BlockType` in
+   `schema.py`, add a matching case in the frontend's `DataPictureRenderer`
+   switch (and a new component under `apps/web/components/DataPicture/` if
+   an existing chart/table component doesn't already fit), and mirror the
+   new prop shape in the `DataPictureBlock` union in `apps/web/lib/api.ts`.
+4. Add an example to `examples.py` if it's a good quick-start demo, and a
+   test in `tests/test_datapicture_planner.py` / `test_datapicture_api.py`.
+
 ## Adding A Dataset
 
 1. Add source URLs to `src/uni_intel/config.py`.

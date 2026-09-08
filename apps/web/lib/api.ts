@@ -150,6 +150,100 @@ export type MetricInsight = {
   };
 };
 
+// --- Data Picture Studio ---------------------------------------------------
+// Mirrors the TypedDict contract in src/uni_intel/api/datapicture/schema.py.
+// Keep the two in sync when the declarative UI JSON shape changes.
+
+export type MetricRef = {
+  metric_id: string;
+  metric_name: string;
+  unit: string;
+  catalog_group: string | null;
+};
+
+export type EvidenceCard = {
+  label: string;
+  value: number | null;
+  unit: string;
+  caption?: string | null;
+};
+
+export type InsightHeaderProps = {
+  title: string;
+  subtitle: string;
+  stat_label: string;
+  stat_value: number | null;
+  stat_unit: string;
+  delta_label?: string | null;
+  delta_value?: number | null;
+};
+
+export type MismatchRow = {
+  provider_id: string;
+  provider_name: string;
+  rank_a: number;
+  value_a: number;
+  rank_b: number;
+  value_b: number;
+  rank_delta: number;
+};
+
+export type EquityGapItem = { label: string; note: string };
+
+export type OutlierRow = FactRow & { zscore: number };
+
+export type SourceTraceItem = {
+  source_file_id: string;
+  source_name: string;
+  source_url: string | null;
+  dataset_name: string | null;
+  license: string | null;
+  publication_date: string | null;
+  reporting_year: number | null;
+};
+
+export type Caveat = {
+  severity: "info" | "warning" | "error";
+  message: string;
+  check_name: string | null;
+};
+
+export type DataPictureBlock =
+  | { type: "InsightHeader"; title: string; props: InsightHeaderProps }
+  | { type: "NarrativeBuilder"; title: string; props: { paragraphs: string[] } }
+  | { type: "EvidenceCardGrid"; title: string; props: { cards: EvidenceCard[] } }
+  | { type: "RankingBarChart"; title: string; props: { rows: FactRow[] } }
+  | { type: "TrendChart"; title: string; props: { rows: FactRow[]; variant: "single" | "multi" } }
+  | { type: "MismatchMatrix"; title: string; props: { metric_a: MetricRef; metric_b: MetricRef; rows: MismatchRow[] } }
+  | { type: "EquityGapPanel"; title: string; props: { items: EquityGapItem[] } }
+  | { type: "OutlierExplorer"; title: string; props: { rows: OutlierRow[] } }
+  | { type: "MetricComparisonTable"; title: string; props: { rows: FactRow[] } }
+  | { type: "DataQualityPanel"; title: string; props: { checks: QualityCheck[] } }
+  | { type: "SourceTraceDrawer"; title: string; props: { sources: SourceTraceItem[] } }
+  | { type: "FollowUpPromptRail"; title: string; props: { prompts: string[] } };
+
+export type DataPictureIntent = "trend" | "ranking" | "mismatch" | "equity" | "outlier" | "quality" | "clarify";
+
+export type DataPicture = {
+  id: string;
+  question: string;
+  intent: DataPictureIntent;
+  generated_at: string;
+  headline: InsightHeaderProps;
+  blocks: DataPictureBlock[];
+  caveats: Caveat[];
+  sources: SourceTraceItem[];
+  follow_ups: string[];
+  clarification: { suggestions: string[]; confidence: number } | null;
+};
+
+export type DataPictureExample = {
+  id: string;
+  label: string;
+  question: string;
+  intent: DataPictureIntent;
+};
+
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
@@ -251,4 +345,14 @@ export function getSources() {
 
 export function getQuality() {
   return getJson<QualityCheck[]>("/quality?limit=100");
+}
+
+export function getDataPicture(question: string, year?: number) {
+  const params = new URLSearchParams({ q: question });
+  if (year) params.set("year", String(year));
+  return getJson<DataPicture>(`/datapicture/compose?${params.toString()}`);
+}
+
+export function getDataPictureExamples() {
+  return getJson<DataPictureExample[]>("/datapicture/examples");
 }

@@ -851,3 +851,12 @@ def quality(limit: int = Query(100, ge=1, le=500)):
         )
     finally:
         conn.close()
+
+
+# Imported at the bottom (not top) of this module: uni_intel.api.datapicture
+# imports this module back (to reuse the query functions above instead of
+# duplicating their SQL), so this line runs only once every function and
+# helper above it already exists, avoiding a partially-initialized module.
+from uni_intel.api.datapicture.router import router as datapicture_router  # noqa: E402
+
+app.include_router(datapicture_router)

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { BarChart3, Building2, GitCompare, ListOrdered, TableProperties } from "lucide-react";
+import { BarChart3, Building2, GitCompare, ListOrdered, Sparkles, TableProperties } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Sector overview", icon: BarChart3 },
   { href: "/providers", label: "Providers", icon: Building2 },
   { href: "/rankings", label: "Rankings", icon: ListOrdered },
   { href: "/compare", label: "Compare", icon: GitCompare },
+  { href: "/data-picture", label: "Data Picture Studio", icon: Sparkles },
   { href: "/sources", label: "Sources", icon: TableProperties }
 ];
 
