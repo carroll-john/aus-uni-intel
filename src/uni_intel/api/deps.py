@@ -37,14 +37,17 @@ def _base_connection() -> duckdb.DuckDBPyConnection:
     return conn
 
 
-def get_conn() -> Iterator[duckdb.DuckDBPyConnection]:
-    """Yield a read-only cursor over the warehouse, translating a missing
-    warehouse into an HTTP 503."""
+def connect_read_only() -> duckdb.DuckDBPyConnection:
+    """Return an independent cursor using the API warehouse resolution."""
     try:
-        base = _base_connection()
+        return _base_connection().cursor()
     except WarehouseNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    cursor = base.cursor()
+
+
+def get_conn() -> Iterator[duckdb.DuckDBPyConnection]:
+    """Yield a request-scoped read-only warehouse cursor."""
+    cursor = connect_read_only()
     try:
         yield cursor
     finally:

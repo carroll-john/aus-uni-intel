@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from uni_intel.api.datapicture.router import router as datapicture_router
 from uni_intel.api.routers import (
     benchmarks,
     compare,
@@ -16,6 +17,7 @@ from uni_intel.api.routers import (
 )
 
 ROUTERS = (
+    datapicture_router,
     overview.router,
     providers.router,
     metrics.router,
