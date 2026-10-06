@@ -47,7 +47,13 @@ function renderBlock(block: DataPictureBlock) {
         <TrendLineChart rows={block.props.rows} />
       );
     case "MismatchMatrix":
-      return <MismatchMatrix metricA={block.props.metric_a} metricB={block.props.metric_b} rows={block.props.rows} />;
+      return (
+        <MismatchMatrix
+          metricA={block.props.metric_a}
+          metricB={block.props.metric_b}
+          rows={block.props.rows}
+        />
+      );
     case "EquityGapPanel":
       return <EquityGapPanel items={block.props.items} />;
     case "OutlierExplorer":
@@ -74,7 +80,7 @@ export function InsightHeader({
   stat_value: statValue,
   stat_unit: statUnit,
   delta_label: deltaLabel,
-  delta_value: deltaValue
+  delta_value: deltaValue,
 }: InsightHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -84,10 +90,16 @@ export function InsightHeader({
       </div>
       <div className="shrink-0 rounded-md border border-line bg-cream/50 px-4 py-3 text-right">
         <div className="text-xs font-medium uppercase text-muted">{statLabel}</div>
-        <div className="mt-1 text-2xl font-semibold tabular-nums">{formatValue(statValue, statUnit)}</div>
+        <div className="mt-1 text-2xl font-semibold tabular-nums">
+          {formatValue(statValue, statUnit)}
+        </div>
         {deltaLabel ? (
-          <div className={`mt-1 text-xs font-semibold ${(deltaValue ?? 0) < 0 ? "text-coral" : "text-teal"}`}>
-            {deltaValue !== null && deltaValue !== undefined ? `${deltaValue >= 0 ? "+" : ""}${deltaValue.toFixed(0)}% · ` : ""}
+          <div
+            className={`mt-1 text-xs font-semibold ${(deltaValue ?? 0) < 0 ? "text-coral" : "text-teal"}`}
+          >
+            {deltaValue !== null && deltaValue !== undefined
+              ? `${deltaValue >= 0 ? "+" : ""}${deltaValue.toFixed(0)}% · `
+              : ""}
             {deltaLabel}
           </div>
         ) : null}
@@ -129,7 +141,9 @@ function CaveatBanner({ caveats }: { caveats: Caveat[] }) {
   return (
     <div
       className={`rounded-md border px-4 py-3 text-sm ${
-        worst === "error" ? "border-coral/40 bg-coral/5 text-coral" : "border-amber/40 bg-amber/5 text-amber"
+        worst === "error"
+          ? "border-coral/40 bg-coral/5 text-coral"
+          : "border-amber/40 bg-amber/5 text-amber"
       }`}
     >
       <div className="font-semibold">Caveats to keep in mind</div>

@@ -12,20 +12,24 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
 } from "recharts";
 import type { FactRow } from "@/lib/api";
+import {
+  BENCHMARK_COLOR as benchmarkColor,
+  BENCHMARK_KEY_PREFIX,
+  CHART_COLORS as chartColors,
+  CHART_GRID_COLOR,
+  PRIMARY_CHART_COLOR as primaryChartColor,
+  SECONDARY_CHART_COLOR as secondaryChartColor,
+} from "@/lib/constants";
 import { formatAxisValue, formatValue } from "@/lib/format";
 
-export const BENCHMARK_KEY_PREFIX = "benchmark:";
+export { BENCHMARK_KEY_PREFIX };
 
 function isBenchmarkKey(key: string | undefined) {
   return Boolean(key && key.startsWith(BENCHMARK_KEY_PREFIX));
 }
-
-const benchmarkColor = "#5a6779";
-const primaryChartColor = "#0070c0";
-const secondaryChartColor = "#d9a514";
 
 type ChartDatum = {
   label?: string;
@@ -38,7 +42,7 @@ type ChartDatum = {
 
 export function RankingBarChart({
   rows,
-  benchmark
+  benchmark,
 }: {
   rows: FactRow[];
   benchmark?: { value: number; label: string };
@@ -46,7 +50,7 @@ export function RankingBarChart({
   const data = rows.slice(0, 8).map((row) => ({
     provider: row.provider_name?.replace("The University of ", "U. ") ?? row.provider_id,
     unit: row.unit,
-    value: row.value
+    value: row.value,
   }));
   const axisUnit = singleUnit(rows);
   if (!data.length) return <EmptyChart />;
@@ -54,8 +58,12 @@ export function RankingBarChart({
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20, top: 8, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" horizontal={false} />
-          <XAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} type="number" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={CHART_GRID_COLOR} horizontal={false} />
+          <XAxis
+            tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
+            type="number"
+            tick={{ fontSize: 11 }}
+          />
           <YAxis dataKey="provider" type="category" width={130} tick={{ fontSize: 11 }} />
           <Tooltip formatter={formatTooltipValue} />
           <Bar dataKey="value" fill={primaryChartColor} radius={[0, 4, 4, 0]} />
@@ -64,7 +72,12 @@ export function RankingBarChart({
               x={benchmark.value}
               stroke={benchmarkColor}
               strokeDasharray="5 4"
-              label={{ value: benchmark.label, position: "top", fontSize: 11, fill: benchmarkColor }}
+              label={{
+                value: benchmark.label,
+                position: "top",
+                fontSize: 11,
+                fill: benchmarkColor,
+              }}
             />
           ) : null}
         </BarChart>
@@ -77,7 +90,7 @@ export function TrendLineChart({ rows }: { rows: FactRow[] }) {
   const data = rows.map((row) => ({
     unit: row.unit,
     year: row.reporting_year,
-    value: row.value
+    value: row.value,
   }));
   const axisUnit = singleUnit(rows);
   if (!data.length) return <EmptyChart />;
@@ -85,11 +98,19 @@ export function TrendLineChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" />
+          <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-          <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
+          <YAxis
+            tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
+            tick={{ fontSize: 11 }}
+          />
           <Tooltip formatter={formatTooltipValue} />
-          <Line dataKey="value" stroke={primaryChartColor} strokeWidth={2.5} dot={{ r: 3, fill: "#ffffff", strokeWidth: 2 }} />
+          <Line
+            dataKey="value"
+            stroke={primaryChartColor}
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: "#ffffff", strokeWidth: 2 }}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -108,7 +129,7 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
     const datum = yearMap.get(row.reporting_year) ?? {
       year: row.reporting_year,
       unit: row.unit,
-      value: row.value
+      value: row.value,
     };
     datum[key] = row.value;
     yearMap.set(row.reporting_year, datum);
@@ -120,7 +141,7 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
     key,
     label,
     benchmark: isBenchmarkKey(key),
-    color: isBenchmarkKey(key) ? benchmarkColor : chartColors[colorIndex++ % chartColors.length]
+    color: isBenchmarkKey(key) ? benchmarkColor : chartColors[colorIndex++ % chartColors.length],
   }));
   const axisUnit = singleUnit(rows);
 
@@ -130,9 +151,12 @@ export function MultiProviderTrendChart({ rows }: { rows: FactRow[] }) {
     <div className="h-80 w-full">
       <ResponsiveContainer>
         <LineChart data={data} margin={{ left: 8, right: 24, top: 12, bottom: 8 }}>
-          <CartesianGrid stroke="#ecedf0" />
+          <CartesianGrid stroke={CHART_GRID_COLOR} />
           <XAxis dataKey="year" allowDecimals={false} tick={{ fontSize: 11 }} />
-          <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
+          <YAxis
+            tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
+            tick={{ fontSize: 11 }}
+          />
           <Tooltip formatter={(value, name) => [formatValue(Number(value), axisUnit), name]} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           {providers.map((provider) => (
@@ -159,7 +183,7 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
     label: shortProviderName(row.provider_name ?? row.provider_id ?? ""),
     unit: row.unit,
     value: row.value,
-    benchmark: isBenchmarkKey(row.provider_id)
+    benchmark: isBenchmarkKey(row.provider_id),
   }));
   const axisUnit = singleUnit(rows);
   if (!data.length) return <EmptyChart />;
@@ -167,9 +191,12 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={data} margin={{ left: 8, right: 20, top: 12, bottom: 32 }}>
-          <CartesianGrid stroke="#ecedf0" vertical={false} />
+          <CartesianGrid stroke={CHART_GRID_COLOR} vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={56} />
-          <YAxis tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)} tick={{ fontSize: 11 }} />
+          <YAxis
+            tickFormatter={(value) => formatAxisValue(Number(value), axisUnit)}
+            tick={{ fontSize: 11 }}
+          />
           <Tooltip formatter={formatTooltipValue} />
           <Bar dataKey="value" fill={secondaryChartColor} radius={[4, 4, 0, 0]}>
             {data.map((datum, index) => (
@@ -184,7 +211,10 @@ export function CompareBarChart({ rows }: { rows: FactRow[] }) {
 
 function formatTooltipValue(value: unknown, _name: unknown, item: { payload?: ChartDatum }) {
   const numericValue = Number(value);
-  return [formatValue(Number.isFinite(numericValue) ? numericValue : null, item.payload?.unit), "Value"];
+  return [
+    formatValue(Number.isFinite(numericValue) ? numericValue : null, item.payload?.unit),
+    "Value",
+  ];
 }
 
 function singleUnit(rows: FactRow[]) {
@@ -195,8 +225,6 @@ function singleUnit(rows: FactRow[]) {
 function shortProviderName(name: string) {
   return name.replace("The University of ", "U. ").replace("University of ", "U. ");
 }
-
-const chartColors = ["#0070c0", "#fdcf41", "#e35a4f", "#02c6fa", "#0d3e7f"];
 
 function EmptyChart() {
   return (

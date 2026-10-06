@@ -3,13 +3,14 @@ from pathlib import Path
 import duckdb
 from fastapi.testclient import TestClient
 
+from uni_intel.api import analytics
 from uni_intel.api import main as api_main
 from uni_intel.config import SCHEMA_PATH
 
 
 def test_compare_defaults_to_one_canonical_scope_per_provider(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -30,7 +31,7 @@ def test_compare_defaults_to_one_canonical_scope_per_provider(tmp_path: Path, mo
 
 def test_compare_rejects_too_many_providers(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     provider_ids = ",".join(f"provider_{index}" for index in range(api_main.MAX_COMPARE_PROVIDERS + 1))
@@ -48,7 +49,7 @@ def test_compare_rejects_too_many_providers(tmp_path: Path, monkeypatch) -> None
 
 def test_compare_rejects_too_many_metrics(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     metric_ids = ",".join(f"metric_{index}" for index in range(api_main.MAX_COMPARE_METRICS + 1))
@@ -66,7 +67,7 @@ def test_compare_rejects_too_many_metrics(tmp_path: Path, monkeypatch) -> None:
 
 def test_compare_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -88,7 +89,7 @@ def test_compare_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
 
 def test_trends_defaults_to_one_canonical_scope_per_provider_year(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -109,7 +110,7 @@ def test_trends_defaults_to_one_canonical_scope_per_provider_year(tmp_path: Path
 
 def test_trends_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -133,7 +134,7 @@ def test_rankings_defaults_to_one_canonical_scope_per_provider_year(
     monkeypatch,
 ) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -153,7 +154,7 @@ def test_rankings_defaults_to_one_canonical_scope_per_provider_year(
 
 def test_rankings_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -174,7 +175,7 @@ def test_rankings_respects_explicit_scope(tmp_path: Path, monkeypatch) -> None:
 
 def test_rankings_filters_by_mission_group(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -190,7 +191,7 @@ def test_rankings_filters_by_mission_group(tmp_path: Path, monkeypatch) -> None:
 
 def test_rankings_filters_by_state(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -205,7 +206,7 @@ def test_rankings_filters_by_state(tmp_path: Path, monkeypatch) -> None:
 
 def test_benchmarks_average_by_mission_group_uses_canonical_scope(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -225,7 +226,7 @@ def test_benchmarks_average_by_mission_group_uses_canonical_scope(tmp_path: Path
 
 def test_benchmarks_group_by_state(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -245,7 +246,7 @@ def test_provider_metric_insight_returns_ranks_medians_changes_and_trend(
     monkeypatch,
 ) -> None:
     db_path = _build_insight_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -288,13 +289,13 @@ def test_rank_for_value_skips_invalid_values() -> None:
         {"provider_id": "provider_a", "value": "bad"},
         {"provider_id": "provider_b", "value": 200.0},
     ]
-    rank = api_main._rank_for_value(rows, "provider_b")
+    rank = analytics.rank_for_value(rows, "provider_b")
     assert rank == {"rank": 1, "of": 1, "value": 200.0}
 
 
 def test_sources_omits_local_path(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_compare_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/sources")

@@ -2,7 +2,8 @@ import type { BenchmarkResponse, FactRow } from "@/lib/api";
 import { getBenchmarks, getRankings, getTrends } from "@/lib/api";
 import type { ChartType, InsightCatalogueEntry, SelectedInsight } from "./types";
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 const DEFAULT_YEAR = "2024";
 
 export type DataFetchResult = {
@@ -28,20 +29,34 @@ export async function fetchInsightData(
         rows,
         headline: {
           value: rows[0]?.value ?? null,
-          subtitle: rows[0]?.provider_name ? `Top provider: ${rows[0].provider_name} (${year})` : `Latest available (${year})`
+          subtitle: rows[0]?.provider_name
+            ? `Top provider: ${rows[0].provider_name} (${year})`
+            : `Latest available (${year})`,
         },
-        dataSource: "live_api"
+        dataSource: "live_api",
       };
     }
 
-    if (selection.breakdown === "time" || selection.chart === "trend_line" || selection.chart === "multi_trend") {
+    if (
+      selection.breakdown === "time" ||
+      selection.chart === "trend_line" ||
+      selection.chart === "multi_trend"
+    ) {
       const rows = await getTrends(entry.metricId, undefined, scope);
       return { chart: selection.chart, rows, dataSource: "live_api" };
     }
 
-    if (selection.breakdown === "mission_group" || selection.breakdown === "state" || selection.chart === "benchmark_bar") {
+    if (
+      selection.breakdown === "mission_group" ||
+      selection.breakdown === "state" ||
+      selection.chart === "benchmark_bar"
+    ) {
       const groupBy = selection.breakdown === "state" ? "state" : "mission_group";
-      const response: BenchmarkResponse = await getBenchmarks(entry.metricId, { year, scope, groupBy });
+      const response: BenchmarkResponse = await getBenchmarks(entry.metricId, {
+        year,
+        scope,
+        groupBy,
+      });
       const rows = response.rows.map(
         (row) =>
           ({
@@ -52,7 +67,7 @@ export async function fetchInsightData(
             reporting_year: row.reporting_year,
             dimension_scope: scope,
             value: row.average,
-            unit: row.unit
+            unit: row.unit,
           }) satisfies FactRow
       );
       return { chart: selection.chart, rows, dataSource: "live_api" };
@@ -62,7 +77,11 @@ export async function fetchInsightData(
     return { chart: selection.chart, rows, dataSource: "live_api" };
   } catch (error) {
     console.error(`[spike] API fetch failed for ${entry.id}:`, error);
-    return { chart: selection.chart, rows: mockRows(entry, selection), dataSource: "mock_fallback" };
+    return {
+      chart: selection.chart,
+      rows: mockRows(entry, selection),
+      dataSource: "mock_fallback",
+    };
   }
 }
 
@@ -75,13 +94,40 @@ function mockRows(entry: InsightCatalogueEntry, selection: SelectedInsight): Fac
       reporting_year: y,
       dimension_scope: entry.scope,
       value: 1000 + y * 10,
-      unit: entry.unit
+      unit: entry.unit,
     }));
   }
   return [
-    { provider_id: "university_of_sydney", provider_name: "University of Sydney", metric_id: entry.metricId, metric_name: entry.name, reporting_year: year, dimension_scope: entry.scope, value: 1200, unit: entry.unit },
-    { provider_id: "university_of_melbourne", provider_name: "University of Melbourne", metric_id: entry.metricId, metric_name: entry.name, reporting_year: year, dimension_scope: entry.scope, value: 1100, unit: entry.unit },
-    { provider_id: "university_of_queensland", provider_name: "University of Queensland", metric_id: entry.metricId, metric_name: entry.name, reporting_year: year, dimension_scope: entry.scope, value: 950, unit: entry.unit }
+    {
+      provider_id: "university_of_sydney",
+      provider_name: "University of Sydney",
+      metric_id: entry.metricId,
+      metric_name: entry.name,
+      reporting_year: year,
+      dimension_scope: entry.scope,
+      value: 1200,
+      unit: entry.unit,
+    },
+    {
+      provider_id: "university_of_melbourne",
+      provider_name: "University of Melbourne",
+      metric_id: entry.metricId,
+      metric_name: entry.name,
+      reporting_year: year,
+      dimension_scope: entry.scope,
+      value: 1100,
+      unit: entry.unit,
+    },
+    {
+      provider_id: "university_of_queensland",
+      provider_name: "University of Queensland",
+      metric_id: entry.metricId,
+      metric_name: entry.name,
+      reporting_year: year,
+      dimension_scope: entry.scope,
+      value: 950,
+      unit: entry.unit,
+    },
   ];
 }
 

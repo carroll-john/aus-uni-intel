@@ -12,7 +12,7 @@ def test_metric_catalog_defaults_to_available_curated_metrics(
     monkeypatch,
 ) -> None:
     db_path = _build_catalog_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/metric-catalog")
@@ -32,7 +32,7 @@ def test_metric_catalog_can_include_missing_backlog_rows(
     monkeypatch,
 ) -> None:
     db_path = _build_catalog_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/metric-catalog", params={"include_missing": "true"})
@@ -50,7 +50,7 @@ def test_raw_metrics_endpoint_remains_full_catalog(
     monkeypatch,
 ) -> None:
     db_path = _build_catalog_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/metrics")
@@ -64,7 +64,7 @@ def test_curated_metric_resolves_in_rankings_compare_and_trends(
     monkeypatch,
 ) -> None:
     db_path = _build_catalog_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr("uni_intel.api.deps.DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     metric_id = "finance_total_revenues_from_continuing_operations_including_deferred_superannuation"

@@ -1,43 +1,34 @@
-"""Read-only data access for the Data Picture Studio.
+"""Read-only Data Picture Studio queries.
 
-Every function here either (a) calls straight into the plain Python
-functions that back the existing ``/rankings``, ``/benchmarks``, ``/compare``,
-``/trends``, ``/metric-catalog``, ``/quality`` and ``/sources`` routes in
-``uni_intel.api.main`` -- reusing their SQL instead of duplicating it -- or
-(b) runs a small, additional, parameterized, read-only lookup needed for
-provenance (source trace / quality-for-metric) that those routes do not
-already expose in the shape this feature needs.
-
-FastAPI route decorators return the wrapped function unchanged, so calling
-``api_main.rankings(...)`` etc. directly is a normal Python function call,
-not an HTTP round trip. Every optional parameter is always passed explicitly
-here: several of those functions default optional parameters to a FastAPI
-``Query(...)`` sentinel object (not ``None``), which would be misinterpreted
-as a real value if omitted from a direct call.
+Reuse the refactored route handlers with an explicit warehouse cursor and
+explicit optional arguments, avoiding FastAPI dependency and Query sentinels
+in direct calls. Additional provenance queries share the same DB resolution.
 """
 
 from __future__ import annotations
 
-import duckdb
+from contextlib import closing
+from typing import Any
 
-from uni_intel.api import main as api_main
-
-
-def connect_read_only() -> duckdb.DuckDBPyConnection:
-    """Open a fresh read-only connection using the same resolution as the API."""
-    return api_main._connect()  # noqa: SLF001 - intentional reuse of the API's DB resolution
-
-
-def get_providers() -> list[dict[str, object]]:
-    return api_main.providers()
+from uni_intel.api import analytics
+from uni_intel.api.deps import connect_read_only
+from uni_intel.api.repositories.base import rows_to_dicts
+from uni_intel.api.routers import benchmarks, compare, metrics, providers, rankings, sources, trends
 
 
-def get_metric_catalog(*, include_missing: bool = True) -> list[dict[str, object]]:
-    return api_main.metric_catalog(include_missing=include_missing)
+def get_providers() -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return providers.providers(conn=conn)
 
 
-def get_years(*, metric_id: str | None = None) -> list[dict[str, object]]:
-    return api_main.years(metric_id=metric_id)
+def get_metric_catalog(*, include_missing: bool = True) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return metrics.metric_catalog(include_missing=include_missing, conn=conn)
+
+
+def get_years(*, metric_id: str | None = None) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return metrics.years(metric_id=metric_id, conn=conn)
 
 
 def get_rankings(
@@ -49,16 +40,18 @@ def get_rankings(
     state: str | None = None,
     limit: int = 25,
     order: str = "desc",
-) -> list[dict[str, object]]:
-    return api_main.rankings(
-        metric_id=metric_id,
-        year=year,
-        scope=scope,
-        mission_group=mission_group,
-        state=state,
-        limit=limit,
-        order=order,
-    )
+) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return rankings.rankings(
+            metric_id=metric_id,
+            year=year,
+            scope=scope,
+            mission_group=mission_group,
+            state=state,
+            limit=limit,
+            order=order,
+            conn=conn,
+        )
 
 
 def get_benchmarks(
@@ -69,15 +62,17 @@ def get_benchmarks(
     group_by: str = "mission_group",
     mission_group: str | None = None,
     state: str | None = None,
-) -> dict[str, object]:
-    return api_main.benchmarks(
-        metric_id=metric_id,
-        year=year,
-        scope=scope,
-        group_by=group_by,
-        mission_group=mission_group,
-        state=state,
-    )
+) -> dict[str, Any]:
+    with closing(connect_read_only()) as conn:
+        return benchmarks.benchmarks(
+            metric_id=metric_id,
+            year=year,
+            scope=scope,
+            group_by=group_by,
+            mission_group=mission_group,
+            state=state,
+            conn=conn,
+        )
 
 
 def get_compare(
@@ -86,13 +81,11 @@ def get_compare(
     *,
     year: int | None = None,
     scope: str | None = None,
-) -> list[dict[str, object]]:
-    return api_main.compare(
-        provider_ids=",".join(provider_ids),
-        metric_ids=",".join(metric_ids),
-        year=year,
-        scope=scope,
-    )
+) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return compare.compare(
+            provider_ids=",".join(provider_ids), metric_ids=",".join(metric_ids), year=year, scope=scope, conn=conn
+        )
 
 
 def get_trends(
@@ -100,30 +93,33 @@ def get_trends(
     *,
     provider_id: str | None = None,
     scope: str | None = None,
-) -> list[dict[str, object]]:
-    return api_main.trends(metric_id=metric_id, provider_id=provider_id, scope=scope)
+) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return trends.trends(metric_id=metric_id, provider_id=provider_id, scope=scope, conn=conn)
 
 
-def get_quality(*, limit: int = 100) -> list[dict[str, object]]:
-    return api_main.quality(limit=limit)
+def get_quality(*, limit: int = 100) -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return sources.quality(limit=limit, conn=conn)
 
 
-def get_sources() -> list[dict[str, object]]:
-    return api_main.sources()
+def get_sources() -> list[dict[str, Any]]:
+    with closing(connect_read_only()) as conn:
+        return sources.sources(conn=conn)
 
 
 def get_source_trace_for_metric(
     metric_id: str,
     *,
     year: int | None = None,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     """Distinct source files (with dataset name) backing a metric's facts.
 
     Not exposed by any existing endpoint in this exact joined/deduped shape,
     so this runs its own small parameterized, read-only query rather than
     stitching it together from several endpoint calls.
     """
-    metric_ids = api_main._metric_ids_for_query(metric_id)  # noqa: SLF001
+    metric_ids = analytics.metric_ids_for_query(metric_id)  # noqa: SLF001
     filters = ["f.metric_id IN ({})".format(", ".join("?" for _ in metric_ids))]
     params: list[object] = list(metric_ids)
     if year is not None:
@@ -132,7 +128,7 @@ def get_source_trace_for_metric(
 
     conn = connect_read_only()
     try:
-        return api_main._rows_to_dicts(  # noqa: SLF001
+        return rows_to_dicts(
             conn,
             f"""
             SELECT DISTINCT s.source_file_id, s.source_name, s.source_url,
@@ -154,9 +150,9 @@ def get_quality_for_metric(
     *,
     year: int | None = None,
     limit: int = 20,
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     """Quality checks tied to the source files that back a metric's facts."""
-    metric_ids = api_main._metric_ids_for_query(metric_id)  # noqa: SLF001
+    metric_ids = analytics.metric_ids_for_query(metric_id)  # noqa: SLF001
     filters = ["f.metric_id IN ({})".format(", ".join("?" for _ in metric_ids))]
     params: list[object] = list(metric_ids)
     if year is not None:
@@ -166,7 +162,7 @@ def get_quality_for_metric(
 
     conn = connect_read_only()
     try:
-        return api_main._rows_to_dicts(  # noqa: SLF001
+        return rows_to_dicts(
             conn,
             f"""
             SELECT DISTINCT q.check_name, q.status, q.severity, q.observed_value,

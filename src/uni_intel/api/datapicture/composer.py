@@ -10,6 +10,7 @@ from __future__ import annotations
 import statistics
 import uuid
 from datetime import UTC, datetime
+from typing import Any, cast
 
 from uni_intel.api.datapicture import queries
 from uni_intel.api.datapicture.examples import EXAMPLE_QUESTIONS
@@ -20,6 +21,7 @@ from uni_intel.api.datapicture.schema import (
     DataPictureBlock,
     MetricRef,
     Plan,
+    SourceTraceItem,
 )
 
 MAX_TREND_PROVIDERS = 5
@@ -109,7 +111,7 @@ def _format_compact_currency(amount: float) -> str:
     return f"{sign}${absolute:,.0f}"
 
 
-def _caveats_from_quality(checks: list[dict[str, object]]) -> list[Caveat]:
+def _caveats_from_quality(checks: list[dict[str, Any]]) -> list[Caveat]:
     caveats: list[Caveat] = []
     seen: set[tuple[str, str]] = set()
     for check in checks:
@@ -132,8 +134,8 @@ def _caveats_from_quality(checks: list[dict[str, object]]) -> list[Caveat]:
     return caveats
 
 
-def _sources_block_and_list(metric_ids: list[str], year: int | None) -> tuple[DataPictureBlock, list[dict[str, object]]]:
-    trace: list[dict[str, object]] = []
+def _sources_block_and_list(metric_ids: list[str], year: int | None) -> tuple[DataPictureBlock, list[SourceTraceItem]]:
+    trace: list[SourceTraceItem] = []
     seen: set[str] = set()
     for metric_id in metric_ids:
         for item in queries.get_source_trace_for_metric(metric_id, year=year):
@@ -141,7 +143,7 @@ def _sources_block_and_list(metric_ids: list[str], year: int | None) -> tuple[Da
             if key in seen:
                 continue
             seen.add(key)
-            trace.append(item)
+            trace.append(cast(SourceTraceItem, item))
     block: DataPictureBlock = {
         "type": "SourceTraceDrawer",
         "title": "Where these numbers come from",
@@ -151,7 +153,7 @@ def _sources_block_and_list(metric_ids: list[str], year: int | None) -> tuple[Da
 
 
 def _quality_block_and_caveats(metric_ids: list[str], year: int | None) -> tuple[DataPictureBlock, list[Caveat]]:
-    checks: list[dict[str, object]] = []
+    checks: list[dict[str, Any]] = []
     seen: set[str] = set()
     for metric_id in metric_ids:
         for check in queries.get_quality_for_metric(metric_id, year=year):
@@ -189,7 +191,7 @@ def _insight_header(
     stat_unit: str,
     delta_label: str | None = None,
     delta_value: float | None = None,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     return {
         "title": title,
         "subtitle": subtitle,
@@ -201,13 +203,13 @@ def _insight_header(
     }
 
 
-def _ranked_rows(rows: list[dict[str, object]], *, order: str = "desc") -> list[dict[str, object]]:
+def _ranked_rows(rows: list[dict[str, Any]], *, order: str = "desc") -> list[dict[str, Any]]:
     valid = [row for row in rows if row.get("value") is not None]
     valid.sort(key=lambda row: float(row["value"]), reverse=(order == "desc"))
     return valid
 
 
-def _zscores_by_provider(rows: list[dict[str, object]]) -> dict[str, float]:
+def _zscores_by_provider(rows: list[dict[str, Any]]) -> dict[str, float]:
     values = [float(row["value"]) for row in rows if row.get("value") is not None]
     if len(values) < 3:
         return {}
@@ -216,9 +218,7 @@ def _zscores_by_provider(rows: list[dict[str, object]]) -> dict[str, float]:
     if stdev == 0:
         return {}
     return {
-        str(row["provider_id"]): (float(row["value"]) - mean) / stdev
-        for row in rows
-        if row.get("value") is not None
+        str(row["provider_id"]): (float(row["value"]) - mean) / stdev for row in rows if row.get("value") is not None
     }
 
 
@@ -233,7 +233,7 @@ def _build_trend(question: str, plan: Plan, university_ids: set[str]) -> DataPic
     providers = plan["providers"][:MAX_TREND_PROVIDERS]
 
     if providers:
-        rows: list[dict[str, object]] = []
+        rows: list[dict[str, Any]] = []
         for provider in providers:
             rows.extend(queries.get_trends(metric_id, provider_id=provider["provider_id"]))
         subject_label = " and ".join(provider["provider_name"] for provider in providers)
@@ -302,10 +302,10 @@ def _build_trend(question: str, plan: Plan, university_ids: set[str]) -> DataPic
 
 
 def _national_median_series(
-    rows: list[dict[str, object]],
+    rows: list[dict[str, Any]],
     metric: MetricRef,
     university_ids: set[str],
-) -> list[dict[str, object]]:
+) -> list[dict[str, Any]]:
     by_year: dict[int, list[float]] = {}
     for row in rows:
         if str(row.get("provider_id")) not in university_ids or row.get("value") is None:
@@ -330,13 +330,15 @@ def _national_median_series(
 def _trend_narrative(
     subject_label: str,
     metric: MetricRef,
-    earliest: dict[str, object] | None,
-    latest: dict[str, object] | None,
+    earliest: dict[str, Any] | None,
+    latest: dict[str, Any] | None,
     delta_pct: float | None,
 ) -> list[str]:
     if not earliest or not latest:
         return [f"No time series is available yet for {metric['metric_name'].lower()}."]
-    earliest_value = _format_value(float(earliest["value"]) if earliest.get("value") is not None else None, metric["unit"])
+    earliest_value = _format_value(
+        float(earliest["value"]) if earliest.get("value") is not None else None, metric["unit"]
+    )
     latest_value = _format_value(float(latest["value"]) if latest.get("value") is not None else None, metric["unit"])
     direction = "grown" if (delta_pct or 0) >= 0 else "fallen"
     delta_text = f"{abs(delta_pct):.0f}%" if delta_pct is not None else "an unknown amount"
@@ -349,7 +351,7 @@ def _trend_narrative(
     ]
 
 
-def _trend_evidence_cards(ordered: list[dict[str, object]], metric: MetricRef) -> list[dict[str, object]]:
+def _trend_evidence_cards(ordered: list[dict[str, Any]], metric: MetricRef) -> list[dict[str, Any]]:
     if not ordered:
         return []
     valued = [row for row in ordered if row.get("value") is not None]
@@ -357,8 +359,16 @@ def _trend_evidence_cards(ordered: list[dict[str, object]], metric: MetricRef) -
         return []
     peak = max(valued, key=lambda row: float(row["value"]))
     cards = [
-        {"label": f"First recorded ({ordered[0]['reporting_year']})", "value": ordered[0].get("value"), "unit": metric["unit"]},
-        {"label": f"Latest ({ordered[-1]['reporting_year']})", "value": ordered[-1].get("value"), "unit": metric["unit"]},
+        {
+            "label": f"First recorded ({ordered[0]['reporting_year']})",
+            "value": ordered[0].get("value"),
+            "unit": metric["unit"],
+        },
+        {
+            "label": f"Latest ({ordered[-1]['reporting_year']})",
+            "value": ordered[-1].get("value"),
+            "unit": metric["unit"],
+        },
     ]
     if peak["reporting_year"] not in (ordered[0]["reporting_year"], ordered[-1]["reporting_year"]):
         cards.append({"label": f"Peak ({peak['reporting_year']})", "value": peak.get("value"), "unit": metric["unit"]})
@@ -406,7 +416,9 @@ def _build_ranking(question: str, plan: Plan) -> DataPicture:
     blocks.append(sources_block)
 
     follow_ups = [
-        f"How has {leader['provider_name']}'s {metric['metric_name'].lower()} changed over time?" if leader else question,
+        f"How has {leader['provider_name']}'s {metric['metric_name'].lower()} changed over time?"
+        if leader
+        else question,
         f"Which universities have high {metric['metric_name'].lower()} but a low student experience rating?",
     ]
     blocks.append(_follow_up_block(follow_ups))
@@ -425,7 +437,7 @@ def _build_ranking(question: str, plan: Plan) -> DataPicture:
     }
 
 
-def _ranking_narrative(leader: dict[str, object] | None, metric: MetricRef, total: int) -> str:
+def _ranking_narrative(leader: dict[str, Any] | None, metric: MetricRef, total: int) -> str:
     if not leader:
         return f"No ranking data is available yet for {metric['metric_name'].lower()}."
     value = _format_value(float(leader["value"]) if leader.get("value") is not None else None, metric["unit"])
@@ -435,7 +447,7 @@ def _ranking_narrative(leader: dict[str, object] | None, metric: MetricRef, tota
     )
 
 
-def _outlier_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+def _outlier_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     zscores = _zscores_by_provider(rows)
     flagged = [
         {**row, "zscore": zscores[str(row["provider_id"])]}
@@ -509,7 +521,7 @@ def _build_outlier(question: str, plan: Plan) -> DataPicture:
 # ---------------------------------------------------------------------------
 
 
-def _build_mismatch(question: str, plan: Plan, metric_catalog: list[dict[str, object]]) -> DataPicture:
+def _build_mismatch(question: str, plan: Plan, metric_catalog: list[dict[str, Any]]) -> DataPicture:
     metrics = list(plan["metrics"])
     if len(metrics) < 2:
         partner_id = _DEFAULT_MISMATCH_PARTNER.get(metrics[0]["metric_id"]) if metrics else None
@@ -615,7 +627,7 @@ def _build_mismatch(question: str, plan: Plan, metric_catalog: list[dict[str, ob
     }
 
 
-def _mismatch_narrative(biggest: dict[str, object] | None, metric_a: MetricRef, metric_b: MetricRef) -> str:
+def _mismatch_narrative(biggest: dict[str, Any] | None, metric_a: MetricRef, metric_b: MetricRef) -> str:
     if not biggest:
         return f"No universities have comparable data on both {metric_a['metric_name'].lower()} and {metric_b['metric_name'].lower()} yet."
     higher_metric = metric_a if biggest["rank_delta"] < 0 else metric_b
@@ -632,7 +644,7 @@ def _mismatch_narrative(biggest: dict[str, object] | None, metric_a: MetricRef, 
 # ---------------------------------------------------------------------------
 
 
-def _build_equity(question: str, plan: Plan, metric_catalog: list[dict[str, object]]) -> DataPicture:
+def _build_equity(question: str, plan: Plan, metric_catalog: list[dict[str, Any]]) -> DataPicture:
     equity_items = [row for row in metric_catalog if row.get("catalog_group") == "Equity"]
     headline = _insight_header(
         "Equity breakdowns are not in the warehouse yet",
@@ -655,9 +667,7 @@ def _build_equity(question: str, plan: Plan, metric_catalog: list[dict[str, obje
             "type": "EquityGapPanel",
             "title": "Equity metric backlog",
             "props": {
-                "items": [
-                    {"label": row.get("metric_name"), "note": row.get("source_note")} for row in equity_items
-                ]
+                "items": [{"label": row.get("metric_name"), "note": row.get("source_note")} for row in equity_items]
             },
         },
     ]
@@ -692,7 +702,7 @@ def _build_equity(question: str, plan: Plan, metric_catalog: list[dict[str, obje
 def _build_quality(question: str, plan: Plan) -> DataPicture:
     metric_ids = [metric["metric_id"] for metric in plan["metrics"]]
     if metric_ids:
-        checks: list[dict[str, object]] = []
+        checks: list[dict[str, Any]] = []
         for metric_id in metric_ids:
             checks.extend(queries.get_quality_for_metric(metric_id, limit=50))
         subject = ", ".join(metric["metric_name"] for metric in plan["metrics"])
@@ -720,7 +730,7 @@ def _build_quality(question: str, plan: Plan) -> DataPicture:
         _narrative_block(narrative),
         {"type": "DataQualityPanel", "title": "All checks", "props": {"checks": checks}},
     ]
-    sources: list[dict[str, object]] = []
+    sources: list[SourceTraceItem] = []
     if metric_ids:
         sources_block, sources = _sources_block_and_list(metric_ids, None)
         blocks.append(sources_block)
@@ -748,9 +758,8 @@ def _build_quality(question: str, plan: Plan) -> DataPicture:
 
 def _clarification_picture(question: str, plan: Plan) -> DataPicture:
     example_questions = [example["question"] for example in EXAMPLE_QUESTIONS]
-    suggestion_text = (
-        "I couldn't confidently match that to a metric this prototype tracks. "
-        + ("Related backlog items: " + "; ".join(plan["suggestions"]) + "." if plan["suggestions"] else "")
+    suggestion_text = "I couldn't confidently match that to a metric this prototype tracks. " + (
+        "Related backlog items: " + "; ".join(plan["suggestions"]) + "." if plan["suggestions"] else ""
     )
     headline = _insight_header(
         "I need a bit more detail",

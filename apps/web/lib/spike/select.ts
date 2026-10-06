@@ -10,11 +10,17 @@ import type {
   ChatMessage,
   InsightCatalogueEntry,
   SelectorKind,
-  SelectedInsight
+  SelectedInsight,
 } from "./types";
 
 const breakdownSchema = z.enum(["time", "provider", "mission_group", "state"]);
-const chartSchema = z.enum(["metric_card", "trend_line", "multi_trend", "ranking_bar", "benchmark_bar"]);
+const chartSchema = z.enum([
+  "metric_card",
+  "trend_line",
+  "multi_trend",
+  "ranking_bar",
+  "benchmark_bar",
+]);
 
 const selectionSchema = z.object({
   insights: z.array(
@@ -23,7 +29,7 @@ const selectionSchema = z.object({
       breakdown: breakdownSchema,
       scope: z.string().optional(),
       year: z.number().optional(),
-      chart: chartSchema
+      chart: chartSchema,
     })
   ),
   layout: z.object({
@@ -31,17 +37,17 @@ const selectionSchema = z.object({
     sections: z.array(
       z.object({
         heading: z.string().optional(),
-        itemIds: z.array(z.string())
+        itemIds: z.array(z.string()),
       })
-    )
+    ),
   }),
   rationale: z.string(),
   clarify: z
     .object({
       question: z.string(),
-      options: z.array(z.string())
+      options: z.array(z.string()),
     })
-    .optional()
+    .optional(),
 });
 
 const STOPWORDS = new Set([
@@ -89,14 +95,35 @@ const STOPWORDS = new Set([
   "that",
   "year",
   "2024",
-  "2023"
+  "2023",
 ]);
 
 const DOMAIN_HINTS: { pattern: RegExp; groups: string[] }[] = [
-  { pattern: /\b(revenue|finance|expense|margin|surplus|deficit|fee income|grants|salaries|assets|liabilities|cash flow|hecs)\b/i, groups: ["Finance and funding", "Revenue lines", "Expense lines", "Salaries", "Financial sustainability"] },
-  { pattern: /\b(enrol|student load|eftsl|postgraduate|undergraduate|commencing|coursework|hdr|phd)\b/i, groups: ["Students and load", "Demand"] },
-  { pattern: /\b(qilt|ses|experience|satisfaction|teaching quality|support services|skills development)\b/i, groups: ["Student experience"] },
-  { pattern: /\b(herdc|research income|research load|completions|research degree)\b/i, groups: ["Research", "Students and load"] }
+  {
+    pattern:
+      /\b(revenue|finance|expense|margin|surplus|deficit|fee income|grants|salaries|assets|liabilities|cash flow|hecs)\b/i,
+    groups: [
+      "Finance and funding",
+      "Revenue lines",
+      "Expense lines",
+      "Salaries",
+      "Financial sustainability",
+    ],
+  },
+  {
+    pattern:
+      /\b(enrol|student load|eftsl|postgraduate|undergraduate|commencing|coursework|hdr|phd)\b/i,
+    groups: ["Students and load", "Demand"],
+  },
+  {
+    pattern:
+      /\b(qilt|ses|experience|satisfaction|teaching quality|support services|skills development)\b/i,
+    groups: ["Student experience"],
+  },
+  {
+    pattern: /\b(herdc|research income|research load|completions|research degree)\b/i,
+    groups: ["Research", "Students and load"],
+  },
 ];
 
 type ScoredEntry = {
@@ -106,7 +133,10 @@ type ScoredEntry = {
 };
 
 function normalize(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function tokenize(text: string) {
@@ -133,7 +163,7 @@ function entryKeywords(entry: InsightCatalogueEntry) {
     entry.name,
     entry.id.replaceAll("_", " "),
     entry.group,
-    entry.question
+    entry.question,
   ].map(normalize);
 }
 
@@ -145,7 +175,12 @@ function inferDomainGroups(intent: string) {
   return groups;
 }
 
-function scoreEntry(entry: InsightCatalogueEntry, intent: string, tokens: string[], domainGroups: Set<string>): ScoredEntry {
+function scoreEntry(
+  entry: InsightCatalogueEntry,
+  intent: string,
+  tokens: string[],
+  domainGroups: Set<string>
+): ScoredEntry {
   const reasons: string[] = [];
   let score = 0;
   const normalizedIntent = normalize(intent);
@@ -197,7 +232,16 @@ function scoreEntry(entry: InsightCatalogueEntry, intent: string, tokens: string
     }
   }
 
-  const distinguishing = ["postgraduate", "herdc", "qilt", "overseas", "operating", "commencing", "coursework", "international"];
+  const distinguishing = [
+    "postgraduate",
+    "herdc",
+    "qilt",
+    "overseas",
+    "operating",
+    "commencing",
+    "coursework",
+    "international",
+  ];
   for (const word of distinguishing) {
     if (!normalizedIntent.includes(word)) continue;
     const entryText = `${entry.id} ${entry.name}`.toLowerCase();
@@ -212,23 +256,36 @@ function scoreEntry(entry: InsightCatalogueEntry, intent: string, tokens: string
 
 function inferBreakdown(intent: string, entry: InsightCatalogueEntry): Breakdown {
   const lower = intent.toLowerCase();
-  if (/\b(mission group|go8|atn|peer group|peer benchmark)\b/.test(lower) && entry.breakdowns.includes("mission_group")) {
+  if (
+    /\b(mission group|go8|atn|peer group|peer benchmark)\b/.test(lower) &&
+    entry.breakdowns.includes("mission_group")
+  ) {
     return "mission_group";
   }
-  if (/\b(state|nsw|vic|qld|wa|sa|tas|act|nt)\b/.test(lower) && entry.breakdowns.includes("state")) {
+  if (
+    /\b(state|nsw|vic|qld|wa|sa|tas|act|nt)\b/.test(lower) &&
+    entry.breakdowns.includes("state")
+  ) {
     return "state";
   }
-  if (/\b(over time|trend|histor|year on year|time series)\b/.test(lower) && entry.breakdowns.includes("time")) {
+  if (
+    /\b(over time|trend|histor|year on year|time series)\b/.test(lower) &&
+    entry.breakdowns.includes("time")
+  ) {
     return "time";
   }
-  if (/\b(by provider|rank|ranked|universit|compare providers|provider level)\b/.test(lower) && entry.breakdowns.includes("provider")) {
+  if (
+    /\b(by provider|rank|ranked|universit|compare providers|provider level)\b/.test(lower) &&
+    entry.breakdowns.includes("provider")
+  ) {
     return "provider";
   }
   return entry.defaultChart === "trend_line" ? "time" : "provider";
 }
 
 function inferChart(breakdown: Breakdown, entry: InsightCatalogueEntry): ChartType {
-  if (breakdown === "time") return entry.allowedCharts.includes("trend_line") ? "trend_line" : entry.defaultChart;
+  if (breakdown === "time")
+    return entry.allowedCharts.includes("trend_line") ? "trend_line" : entry.defaultChart;
   if (breakdown === "mission_group" || breakdown === "state") {
     return entry.allowedCharts.includes("benchmark_bar") ? "benchmark_bar" : entry.defaultChart;
   }
@@ -244,7 +301,10 @@ function detectUnavailable(intent: string, catalogue: InsightCatalogueEntry[]) {
       concept.closestIds.forEach((id) => closestIds.add(id));
     }
   }
-  return { notes, closestIds: [...closestIds].filter((id) => catalogue.some((entry) => entry.id === id)) };
+  return {
+    notes,
+    closestIds: [...closestIds].filter((id) => catalogue.some((entry) => entry.id === id)),
+  };
 }
 
 function intentClauses(intent: string) {
@@ -318,10 +378,10 @@ export function heuristicSelect(
         rationale: "No catalogue match from keywords; asking user to clarify.",
         clarify: {
           question: "I couldn't match your request to a known insight. Which area do you want?",
-          options
+          options,
         },
-        unavailableNotes: notes.length ? notes : undefined
-      }
+        unavailableNotes: notes.length ? notes : undefined,
+      },
     };
   }
 
@@ -334,7 +394,7 @@ export function heuristicSelect(
       breakdown,
       chart,
       scope: entry.scope,
-      year: 2024
+      year: 2024,
     } satisfies SelectedInsight;
   });
 
@@ -344,13 +404,15 @@ export function heuristicSelect(
   }
 
   const matchSummary = chosen
-    .map((item) => `${item.entry.name} (score ${item.score}: ${item.reasons.slice(0, 3).join(", ")})`)
+    .map(
+      (item) => `${item.entry.name} (score ${item.score}: ${item.reasons.slice(0, 3).join(", ")})`
+    )
     .join("; ");
 
   const itemIds = merged.map((item) => item.id);
   const title =
     merged.length === 1
-      ? catalogue.find((entry) => entry.id === merged[0].id)?.name ?? "Insight view"
+      ? (catalogue.find((entry) => entry.id === merged[0].id)?.name ?? "Insight view")
       : "Composed insight view";
 
   const lowConfidence = chosen.length === 0 || (ranked[0]?.score ?? 0) < 8;
@@ -361,7 +423,7 @@ export function heuristicSelect(
       insights: merged,
       layout: {
         title,
-        sections: [{ heading: "Selected insights", itemIds }]
+        sections: [{ heading: "Selected insights", itemIds }],
       },
       rationale: lowConfidence
         ? `Low-confidence heuristic match. Top candidates: ${ranked
@@ -374,15 +436,17 @@ export function heuristicSelect(
         lowConfidence && !merged.length
           ? {
               question: "I'm not confident which insight you mean. Did you want one of these?",
-              options: ranked.slice(0, 5).map((item) => item.entry.name)
+              options: ranked.slice(0, 5).map((item) => item.entry.name),
             }
           : notes.length && !merged.length
             ? {
                 question: `${notes.join(" ")} Did you mean one of these available insights?`,
-                options: closestIds.map((id) => catalogue.find((entry) => entry.id === id)?.name ?? id)
+                options: closestIds.map(
+                  (id) => catalogue.find((entry) => entry.id === id)?.name ?? id
+                ),
               }
-            : undefined
-    }
+            : undefined,
+    },
   };
 }
 
@@ -391,7 +455,9 @@ function resolveLlmProvider() {
     return createOpenAI({ apiKey: process.env.OPENAI_API_KEY })("gpt-4o-mini");
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY })("gemini-2.0-flash");
+    return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY })(
+      "gemini-2.0-flash"
+    );
   }
   return null;
 }
@@ -411,7 +477,7 @@ export async function llmSelect(
     question: entry.question,
     description: entry.description,
     breakdowns: entry.breakdowns,
-    allowedCharts: entry.allowedCharts
+    allowedCharts: entry.allowedCharts,
   }));
 
   const system = `You select pre-computed university intelligence insights from a fixed catalogue for Australian higher education public data.
@@ -429,7 +495,7 @@ Rules:
 
   const userContext = [
     `Catalogue:\n${JSON.stringify(catalogueJson, null, 2)}`,
-    priorSelection ? `Prior selection:\n${JSON.stringify(priorSelection, null, 2)}` : null
+    priorSelection ? `Prior selection:\n${JSON.stringify(priorSelection, null, 2)}` : null,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -441,8 +507,8 @@ Rules:
       system,
       messages: [
         { role: "system", content: userContext },
-        ...messages.map((message) => ({ role: message.role, content: message.content }))
-      ]
+        ...messages.map((message) => ({ role: message.role, content: message.content })),
+      ],
     });
     return { selection: result.object as AgentSelection, selector: "llm" };
   } catch (error) {
@@ -451,12 +517,17 @@ Rules:
   }
 }
 
-export function validateSelection(selection: AgentSelection, catalogue: InsightCatalogueEntry[]): AgentSelection {
+export function validateSelection(
+  selection: AgentSelection,
+  catalogue: InsightCatalogueEntry[]
+): AgentSelection {
   const byId = new Map(catalogue.map((entry) => [entry.id, entry]));
   const validInsights = selection.insights.filter((insight) => {
     const entry = byId.get(insight.id);
     if (!entry) return false;
-    return entry.breakdowns.includes(insight.breakdown) && entry.allowedCharts.includes(insight.chart);
+    return (
+      entry.breakdowns.includes(insight.breakdown) && entry.allowedCharts.includes(insight.chart)
+    );
   });
 
   if (!validInsights.length && !selection.clarify) {
@@ -464,9 +535,10 @@ export function validateSelection(selection: AgentSelection, catalogue: InsightC
       ...selection,
       insights: [],
       clarify: {
-        question: "I couldn't validate the selected insights against the catalogue. Please choose an available insight.",
-        options: catalogue.slice(0, 6).map((entry) => entry.name)
-      }
+        question:
+          "I couldn't validate the selected insights against the catalogue. Please choose an available insight.",
+        options: catalogue.slice(0, 6).map((entry) => entry.name),
+      },
     };
   }
 
@@ -478,7 +550,8 @@ export async function runSelection(
   catalogue: InsightCatalogueEntry[],
   priorSelection?: AgentSelection
 ): Promise<{ selection: AgentSelection; selector: SelectorKind }> {
-  const latestIntent = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const latestIntent =
+    [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const llmResult = await llmSelect(messages, catalogue, priorSelection);
   const raw = llmResult ?? heuristicSelect(latestIntent, catalogue, priorSelection);
   return { ...raw, selection: validateSelection(raw.selection, catalogue) };

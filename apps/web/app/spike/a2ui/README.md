@@ -21,11 +21,11 @@ Open http://127.0.0.1:3000/spike/a2ui
 
 ## Environment variables
 
-| Variable | Purpose |
-| --- | --- |
+| Variable                                     | Purpose                                            |
+| -------------------------------------------- | -------------------------------------------------- |
 | `API_BASE_URL` or `NEXT_PUBLIC_API_BASE_URL` | FastAPI base URL (default `http://127.0.0.1:8000`) |
-| `OPENAI_API_KEY` | Optional — enables LLM selection via AI SDK |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Optional — fallback LLM provider |
+| `OPENAI_API_KEY`                             | Optional — enables LLM selection via AI SDK        |
+| `GOOGLE_GENERATIVE_AI_API_KEY`               | Optional — fallback LLM provider                   |
 
 Without an LLM key, a deterministic **heuristic selector** runs so the loop is demoable offline.
 

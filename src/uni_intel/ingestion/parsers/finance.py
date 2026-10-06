@@ -42,8 +42,7 @@ class FinanceParser:
             for row_number, row in enumerate(csv.reader(handle), start=1):
                 if len(row) != self.expected_columns:
                     raise FinanceParseError(
-                        f"Row {row_number} has {len(row)} columns; "
-                        f"expected {self.expected_columns}"
+                        f"Row {row_number} has {len(row)} columns; expected {self.expected_columns}"
                     )
                 rows.append(self._parse_row(row_number, row))
 
@@ -72,7 +71,9 @@ class FinanceParser:
             data_start_row = provider_row + (3 if is_dual_sector_sheet else 2)
 
             for row_number in range(data_start_row, worksheet.max_row + 1):
-                line_item = str(worksheet.cell(row_number, 2).value or worksheet.cell(row_number, 1).value or "").strip()
+                line_item = str(
+                    worksheet.cell(row_number, 2).value or worksheet.cell(row_number, 1).value or ""
+                ).strip()
                 if not line_item:
                     continue
 
@@ -128,7 +129,7 @@ class FinanceParser:
         )
 
 
-def parse_numeric_value(value: str, row_number: int | None = None) -> float:
+def parse_numeric_value(value: object, row_number: int | None = None) -> float:
     if isinstance(value, int | float):
         return float(value)
 
@@ -149,7 +150,7 @@ def parse_numeric_value(value: str, row_number: int | None = None) -> float:
 
 def parse_year(value: object, source_name: str) -> int:
     try:
-        return int(value)
+        return int(value)  # type: ignore[arg-type]  # deliberate coercion, guarded by except
     except (TypeError, ValueError) as exc:
         raise FinanceParseError(f"{source_name} has invalid year: {value}") from exc
 

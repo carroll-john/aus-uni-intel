@@ -16,11 +16,12 @@ const QILT_BREAKDOWNS: Breakdown[] = ["time", "provider"];
 export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
   total_enrolments: {
     question: "How many students are enrolled across the sector?",
-    description: "Total student headcount enrolments by provider and over time from Department student Section 2.",
+    description:
+      "Total student headcount enrolments by provider and over time from Department student Section 2.",
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["enrolments", "enrollment", "students", "headcount"]
+    keywords: ["enrolments", "enrollment", "students", "headcount"],
   },
   total_student_load: {
     question: "What is total student load (EFTSL)?",
@@ -28,7 +29,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["load", "eftsl", "student load"]
+    keywords: ["load", "eftsl", "student load"],
   },
   postgraduate_enrolments: {
     question: "How are postgraduate enrolments tracking?",
@@ -36,7 +37,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["postgraduate", "pg", "masters", "research students"]
+    keywords: ["postgraduate", "pg", "masters", "research students"],
   },
   postgraduate_load: {
     question: "What is postgraduate student load (EFTSL)?",
@@ -44,7 +45,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["postgraduate load", "pg load", "eftsl"]
+    keywords: ["postgraduate load", "pg load", "eftsl"],
   },
   pg_coursework_load: {
     question: "What is postgraduate coursework load?",
@@ -52,7 +53,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["coursework", "pg coursework"]
+    keywords: ["coursework", "pg coursework"],
   },
   pg_research_load: {
     question: "What is postgraduate research load?",
@@ -60,15 +61,16 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["research load", "hdr", "phd load"]
+    keywords: ["research load", "hdr", "phd load"],
   },
   commencing_postgraduate_enrolments: {
     question: "How is postgraduate demand tracking via commencing enrolments?",
-    description: "Commencing postgraduate enrolments as a demand proxy where applications/offers are unavailable.",
+    description:
+      "Commencing postgraduate enrolments as a demand proxy where applications/offers are unavailable.",
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["commencing", "demand", "postgraduate demand", "new pg"]
+    keywords: ["commencing", "demand", "postgraduate demand", "new pg"],
   },
   total_revenue: {
     question: "What is total university revenue?",
@@ -76,7 +78,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["revenue", "income", "finance", "total revenue"]
+    keywords: ["revenue", "income", "finance", "total revenue"],
   },
   total_expenses: {
     question: "What are total university expenses?",
@@ -84,7 +86,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["expenses", "costs", "spending"]
+    keywords: ["expenses", "costs", "spending"],
   },
   operating_margin: {
     question: "What is the operating margin across providers?",
@@ -92,7 +94,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["margin", "operating margin", "profitability"]
+    keywords: ["margin", "operating margin", "profitability"],
   },
   net_operating_result: {
     question: "What is the net operating result?",
@@ -100,7 +102,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["operating result", "surplus", "deficit"]
+    keywords: ["operating result", "surplus", "deficit"],
   },
   overseas_fee_income: {
     question: "How much overseas student fee income do universities earn?",
@@ -108,7 +110,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["international", "overseas", "fee income", "international students"]
+    keywords: ["international", "overseas", "fee income", "international students"],
   },
   herdc_research_income: {
     question: "How much HERDC research income do universities receive?",
@@ -116,7 +118,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: FINANCE_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["research income", "herdc", "research funding"]
+    keywords: ["research income", "herdc", "research funding"],
   },
   qilt_overall_experience: {
     question: "How do students rate overall educational experience?",
@@ -124,7 +126,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: QILT_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["ranking_bar", "trend_line", "metric_card"],
-    keywords: ["experience", "qilt", "ses", "satisfaction", "student experience"]
+    keywords: ["experience", "qilt", "ses", "satisfaction", "student experience"],
   },
   qilt_teaching_quality: {
     question: "How do students rate teaching quality and engagement?",
@@ -132,7 +134,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: QILT_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["ranking_bar", "trend_line", "metric_card"],
-    keywords: ["teaching", "engagement", "qilt"]
+    keywords: ["teaching", "engagement", "qilt"],
   },
   qilt_student_support: {
     question: "How do students rate support and services?",
@@ -140,7 +142,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: QILT_BREAKDOWNS,
     defaultChart: "ranking_bar",
     allowedCharts: ["ranking_bar", "trend_line", "metric_card"],
-    keywords: ["support", "services", "student support"]
+    keywords: ["support", "services", "student support"],
   },
   research_degree_completions: {
     question: "How many research degree completions occur?",
@@ -148,7 +150,7 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["completions", "phd", "research degree"]
+    keywords: ["completions", "phd", "research degree"],
   },
   postgraduate_coursework_completions: {
     question: "How many postgraduate coursework completions occur?",
@@ -156,41 +158,49 @@ export const ENRICHMENT_BY_ID: Record<string, EnrichmentOverlay> = {
     breakdowns: STUDENT_BREAKDOWNS,
     defaultChart: "trend_line",
     allowedCharts: ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: ["coursework completions", "pg completions"]
-  }
+    keywords: ["coursework completions", "pg completions"],
+  },
 };
 
 export const UNAVAILABLE_CONCEPTS: { pattern: RegExp; label: string; closestIds: string[] }[] = [
   {
     pattern: /\bretention\b/i,
     label: "Retention rate",
-    closestIds: ["commencing_postgraduate_enrolments", "qilt_overall_experience"]
+    closestIds: ["commencing_postgraduate_enrolments", "qilt_overall_experience"],
   },
   {
     pattern: /\battrition\b/i,
     label: "Attrition rate",
-    closestIds: ["commencing_postgraduate_enrolments"]
+    closestIds: ["commencing_postgraduate_enrolments"],
   },
   {
     pattern: /\bcompletion rate\b/i,
     label: "Completion rate (cohort)",
-    closestIds: ["research_degree_completions", "postgraduate_coursework_completions"]
+    closestIds: ["research_degree_completions", "postgraduate_coursework_completions"],
   },
   {
     pattern: /\b(applicant|offer rate|applications)\b/i,
     label: "Postgraduate applications/offers",
-    closestIds: ["commencing_postgraduate_enrolments"]
+    closestIds: ["commencing_postgraduate_enrolments"],
   },
   {
     pattern: /\b(counsell|placement|partner)\b/i,
     label: "Counselling placements / partner breakdown",
-    closestIds: ["postgraduate_enrolments", "commencing_postgraduate_enrolments"]
-  }
+    closestIds: ["postgraduate_enrolments", "commencing_postgraduate_enrolments"],
+  },
 ];
 
-export function defaultEnrichment(label: string, group: string, sourceNote: string): EnrichmentOverlay {
+export function defaultEnrichment(
+  label: string,
+  group: string,
+  sourceNote: string
+): EnrichmentOverlay {
   const isQilt = group === "Student experience";
-  const breakdowns = isQilt ? QILT_BREAKDOWNS : group.includes("Finance") ? FINANCE_BREAKDOWNS : STUDENT_BREAKDOWNS;
+  const breakdowns = isQilt
+    ? QILT_BREAKDOWNS
+    : group.includes("Finance")
+      ? FINANCE_BREAKDOWNS
+      : STUDENT_BREAKDOWNS;
   const keywords = label
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
@@ -204,6 +214,6 @@ export function defaultEnrichment(label: string, group: string, sourceNote: stri
     allowedCharts: isQilt
       ? ["ranking_bar", "trend_line", "metric_card"]
       : ["trend_line", "ranking_bar", "benchmark_bar", "metric_card"],
-    keywords: [label.toLowerCase(), ...keywords]
+    keywords: [label.toLowerCase(), ...keywords],
   };
 }

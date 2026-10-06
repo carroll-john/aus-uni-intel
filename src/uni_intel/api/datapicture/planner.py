@@ -294,8 +294,7 @@ def _resolve_metrics(
 
     if not available:
         suggestions = [
-            f"{item['metric_name']} ({item.get('source_note', 'not available yet')})"
-            for _, item in unavailable[:3]
+            f"{item['metric_name']} ({item.get('source_note', 'not available yet')})" for _, item in unavailable[:3]
         ]
         return [], suggestions
 

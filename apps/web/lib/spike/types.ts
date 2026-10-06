@@ -1,4 +1,5 @@
-export type ChartType = "metric_card" | "trend_line" | "multi_trend" | "ranking_bar" | "benchmark_bar";
+export type ChartType =
+  "metric_card" | "trend_line" | "multi_trend" | "ranking_bar" | "benchmark_bar";
 
 export type Breakdown = "time" | "provider" | "mission_group" | "state";
 

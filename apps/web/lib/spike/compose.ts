@@ -8,7 +8,7 @@ import type {
   InsightCatalogueEntry,
   MetricCardPayload,
   ResolvedInsightSelection,
-  SelectedInsight
+  SelectedInsight,
 } from "./types";
 
 export { DEFAULT_SURFACE_ID };
@@ -52,7 +52,7 @@ export function resolveSelection(
         ...insight,
         name: entry.name,
         metricId: entry.metricId,
-        group: entry.group
+        group: entry.group,
       };
     })
     .filter((item): item is ResolvedInsightSelection => item !== null);
@@ -62,7 +62,11 @@ export async function buildComposition(
   selection: AgentSelection,
   catalogue: Map<string, InsightCatalogueEntry>,
   options: { surfaceId?: string; isRefinement?: boolean } = {}
-): Promise<{ messages: A2UIMessage[]; compositionTree: CompositionNode[]; dataSource: "live_api" | "mock_fallback" }> {
+): Promise<{
+  messages: A2UIMessage[];
+  compositionTree: CompositionNode[];
+  dataSource: "live_api" | "mock_fallback";
+}> {
   const surfaceId = options.surfaceId ?? DEFAULT_SURFACE_ID;
   const messages: A2UIMessage[] = [];
   const compositionTree: CompositionNode[] = [];
@@ -71,19 +75,24 @@ export async function buildComposition(
   if (!options.isRefinement) {
     messages.push({
       version: "v0.9",
-      createSurface: { surfaceId, catalogId: uniIntelCatalogId }
+      createSurface: { surfaceId, catalogId: uniIntelCatalogId },
     });
   }
 
   const components: Record<string, unknown>[] = [];
   const dataModel: Record<string, unknown> = {
     title: selection.layout.title,
-    rationale: selection.rationale
+    rationale: selection.rationale,
   };
 
   components.push({ id: "root", component: "Column", children: ["title", "rationale", "body"] });
   components.push({ id: "title", component: "Text", text: { path: "/title" }, variant: "h2" });
-  components.push({ id: "rationale", component: "Text", text: { path: "/rationale" }, variant: "caption" });
+  components.push({
+    id: "rationale",
+    component: "Text",
+    text: { path: "/rationale" },
+    variant: "caption",
+  });
   compositionTree.push({ component: "Column", id: "root" });
 
   if (selection.clarify && !selection.insights.length) {
@@ -91,7 +100,12 @@ export async function buildComposition(
     if (selection.unavailableNotes?.length) {
       dataModel.unavailableNotes = selection.unavailableNotes.join(" ");
     }
-    components.push({ id: "body", component: "ClarifyPanel", dataPath: { path: "/clarify" }, notesPath: { path: "/unavailableNotes" } });
+    components.push({
+      id: "body",
+      component: "ClarifyPanel",
+      dataPath: { path: "/clarify" },
+      notesPath: { path: "/unavailableNotes" },
+    });
     compositionTree.push({ component: "ClarifyPanel", id: "body" });
   } else {
     components.push({ id: "body", component: "Column", children: [] });
@@ -106,7 +120,12 @@ export async function buildComposition(
       if (section.heading) {
         const headingId = `${sectionId}-heading`;
         dataModel[headingId] = section.heading;
-        components.push({ id: headingId, component: "Text", text: { path: `/${headingId}` }, variant: "h3" });
+        components.push({
+          id: headingId,
+          component: "Text",
+          text: { path: `/${headingId}` },
+          variant: "h3",
+        });
         cardIds.push(headingId);
         compositionTree.push({ component: "Text", id: headingId, title: section.heading });
       }
@@ -129,28 +148,33 @@ export async function buildComposition(
             title: entry.name,
             value: fetched.headline?.value ?? fetched.rows[0]?.value ?? null,
             unit: entry.unit,
-            subtitle: fetched.headline?.subtitle ?? entry.sourceNote
+            subtitle: fetched.headline?.subtitle ?? entry.sourceNote,
           };
           dataModel[`insights`] = dataModel[`insights`] ?? {};
           (dataModel.insights as Record<string, unknown>)[itemId] = payload;
           components.push({
             id: cardId,
             component: "Card",
-            child: chartId
+            child: chartId,
           });
           components.push({
             id: chartId,
             component: "MetricCard",
-            dataPath: { path: `${dataPath}` }
+            dataPath: { path: `${dataPath}` },
           });
-          compositionTree.push({ component: "MetricCard", id: chartId, insightId: itemId, title: entry.name });
+          compositionTree.push({
+            component: "MetricCard",
+            id: chartId,
+            insightId: itemId,
+            title: entry.name,
+          });
         } else {
           const payload: ChartPayload = {
             title: entry.name,
             subtitle: `${breakdownLabel(insight.breakdown)} · ${entry.group}`,
             rows: fetched.rows,
             unit: entry.unit,
-            benchmark: fetched.benchmark
+            benchmark: fetched.benchmark,
           };
           dataModel[`insights`] = dataModel[`insights`] ?? {};
           (dataModel.insights as Record<string, unknown>)[itemId] = payload;
@@ -158,13 +182,13 @@ export async function buildComposition(
           components.push({
             id: chartId,
             component: chartComponent(insight.chart),
-            dataPath: { path: `${dataPath}` }
+            dataPath: { path: `${dataPath}` },
           });
           compositionTree.push({
             component: chartComponent(insight.chart),
             id: chartId,
             insightId: itemId,
-            title: entry.name
+            title: entry.name,
           });
         }
       }
@@ -179,11 +203,11 @@ export async function buildComposition(
 
   messages.push({
     version: "v0.9",
-    updateComponents: { surfaceId, components }
+    updateComponents: { surfaceId, components },
   });
   messages.push({
     version: "v0.9",
-    updateDataModel: { surfaceId, path: "/", value: dataModel }
+    updateDataModel: { surfaceId, path: "/", value: dataModel },
   });
 
   return { messages, compositionTree, dataSource };

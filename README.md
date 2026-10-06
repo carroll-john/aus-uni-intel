@@ -51,6 +51,16 @@ git commit -m "Refresh warehouse archive"
 git push
 ```
 
+### Hosting the archive off-git (optional)
+
+The committed `~32MB` archive grows git history on every refresh. To avoid this,
+upload the archive to object storage and set `UNI_INTEL_DB_URL` on the API
+deployment to its URL. On cold start the API downloads and inflates the remote
+archive (resolution order: local file, warm `/tmp` file, committed archive, then
+`UNI_INTEL_DB_URL`), so you can then stop committing the archive. Removing the
+existing archive from git history requires a deliberate history rewrite and is
+not done automatically.
+
 For code/data release checks, run:
 
 ```bash

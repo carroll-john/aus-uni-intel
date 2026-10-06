@@ -6,7 +6,7 @@ import type { DataPictureExample } from "@/lib/api";
 
 export function PromptBar({
   examples,
-  defaultQuestion
+  defaultQuestion,
 }: {
   examples: DataPictureExample[];
   defaultQuestion: string;
@@ -16,7 +16,10 @@ export function PromptBar({
   return (
     <div className="space-y-3">
       <form action="/data-picture" className="space-y-3" method="get">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-muted" htmlFor="data-picture-question">
+        <label
+          className="block text-xs font-semibold uppercase tracking-wide text-muted"
+          htmlFor="data-picture-question"
+        >
           Ask a strategic question
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">

@@ -5,48 +5,54 @@ import { MessageProcessor } from "@a2ui/web_core/v0_9";
 import { A2uiSurface } from "@a2ui/react/v0_9";
 import { uniIntelCatalog } from "@/lib/spike/a2ui-catalog";
 import { DEFAULT_SURFACE_ID } from "@/lib/spike/compose";
-import type { AgentSelection, ChatMessage, ComposeLogEntry, ComposeResponse } from "@/lib/spike/types";
+import type {
+  AgentSelection,
+  ChatMessage,
+  ComposeLogEntry,
+  ComposeResponse,
+} from "@/lib/spike/types";
 
 const STARTER_PROMPTS = [
   {
     label: "Finance + research",
-    prompt: "Show total revenue ranked by provider and HERDC research income over time"
+    prompt: "Show total revenue ranked by provider and HERDC research income over time",
   },
   {
     label: "Postgraduate demand",
-    prompt: "How are postgraduate enrolments and commencing postgraduate enrolments tracking over time?"
+    prompt:
+      "How are postgraduate enrolments and commencing postgraduate enrolments tracking over time?",
   },
   {
     label: "International income",
-    prompt: "Rank providers by overseas student fee income for 2024"
+    prompt: "Rank providers by overseas student fee income for 2024",
   },
   {
     label: "Student experience",
-    prompt: "Show QILT overall experience and teaching quality ranked by provider"
+    prompt: "Show QILT overall experience and teaching quality ranked by provider",
   },
   {
     label: "Peer benchmarks",
-    prompt: "Show operating margin broken down by mission group"
-  }
+    prompt: "Show operating margin broken down by mission group",
+  },
 ] as const;
 
 const REFINEMENT_PROMPTS = [
   {
     label: "Add student experience",
-    prompt: "Now add QILT overall experience ranked by provider"
+    prompt: "Now add QILT overall experience ranked by provider",
   },
   {
     label: "Split by mission group",
-    prompt: "Split the view by mission group instead of individual providers"
+    prompt: "Split the view by mission group instead of individual providers",
   },
   {
     label: "Add research load",
-    prompt: "Also include postgraduate research load over time"
+    prompt: "Also include postgraduate research load over time",
   },
   {
     label: "Unavailable metric (demo)",
-    prompt: "Show retention rate by partner"
-  }
+    prompt: "Show retention rate by partner",
+  },
 ] as const;
 
 export function SpikeClient() {
@@ -93,8 +99,8 @@ export function SpikeClient() {
             messages: nextMessages,
             priorSelection,
             surfaceId: DEFAULT_SURFACE_ID,
-            isRefinement: hasSurface
-          })
+            isRefinement: hasSurface,
+          }),
         });
         if (!response.ok) throw new Error(`Compose failed (${response.status})`);
         const payload = (await response.json()) as ComposeResponse;
@@ -102,13 +108,17 @@ export function SpikeClient() {
           processor.processMessages(payload.messages);
           syncSurfaces();
         } catch (renderFailure) {
-          const message = renderFailure instanceof Error ? renderFailure.message : "A2UI render failed";
+          const message =
+            renderFailure instanceof Error ? renderFailure.message : "A2UI render failed";
           setRenderError(message);
         }
         setPriorSelection(payload.selection);
         setHasSurface(true);
         setLogs((current) => [...current, payload.log]);
-        setMessages((current) => [...current, { role: "assistant", content: payload.selection.rationale }]);
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", content: payload.selection.rationale },
+        ]);
       } catch (submitError) {
         const message = submitError instanceof Error ? submitError.message : "Unknown error";
         setError(
@@ -126,10 +136,11 @@ export function SpikeClient() {
   return (
     <div className="space-y-6">
       <section className="rounded-md border border-line bg-white px-4 py-3 text-sm text-muted">
-        Open this page in <strong className="text-ink">Safari or Chrome</strong> if Cursor&apos;s built-in preview shows
-        &quot;Can&apos;t connect to server&quot; after compose. Selection uses an LLM when{" "}
-        <code className="text-xs">OPENAI_API_KEY</code> or <code className="text-xs">GOOGLE_GENERATIVE_AI_API_KEY</code> is
-        set; otherwise a keyword heuristic runs (check the log badge).
+        Open this page in <strong className="text-ink">Safari or Chrome</strong> if Cursor&apos;s
+        built-in preview shows &quot;Can&apos;t connect to server&quot; after compose. Selection
+        uses an LLM when <code className="text-xs">OPENAI_API_KEY</code> or{" "}
+        <code className="text-xs">GOOGLE_GENERATIVE_AI_API_KEY</code> is set; otherwise a keyword
+        heuristic runs (check the log badge).
       </section>
       <section className="panel space-y-3 p-4">
         <label className="block text-sm font-medium text-ink" htmlFor="intent">
@@ -167,7 +178,9 @@ export function SpikeClient() {
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="panel min-h-[420px] p-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Composed view (A2UI)</h2>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            Composed view (A2UI)
+          </h2>
           {!surfaces.length ? (
             <div className="flex h-64 items-center justify-center rounded-md border border-dashed border-line text-sm text-muted">
               Submit a request to generate a composition.
@@ -211,7 +224,7 @@ function SamplePrompts({
   prompts,
   disabled,
   onSelect,
-  onSubmit
+  onSubmit,
 }: {
   title: string;
   prompts: ReadonlyArray<{ label: string; prompt: string }>;
@@ -224,7 +237,10 @@ function SamplePrompts({
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{title}</p>
       <div className="flex flex-wrap gap-2">
         {prompts.map((sample) => (
-          <div className="flex overflow-hidden rounded-md border border-line text-xs" key={sample.label}>
+          <div
+            className="flex overflow-hidden rounded-md border border-line text-xs"
+            key={sample.label}
+          >
             <button
               className="px-3 py-1.5 font-medium text-ink hover:bg-slate-50 disabled:opacity-60"
               disabled={disabled}
@@ -246,7 +262,9 @@ function SamplePrompts({
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted">Click a label to load it into the box, or Run to compose immediately.</p>
+      <p className="text-xs text-muted">
+        Click a label to load it into the box, or Run to compose immediately.
+      </p>
     </div>
   );
 }
@@ -255,7 +273,9 @@ function InspectorLog({ logs }: { logs: ComposeLogEntry[] }) {
   if (!logs.length) {
     return (
       <div className="panel p-4 text-sm text-muted">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Selection log</h2>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+          Selection log
+        </h2>
         Intent → insights selected → composition will appear here.
       </div>
     );
@@ -263,13 +283,21 @@ function InspectorLog({ logs }: { logs: ComposeLogEntry[] }) {
 
   return (
     <div className="panel max-h-[720px] space-y-4 overflow-y-auto p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Intent → selection → composition</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+        Intent → selection → composition
+      </h2>
       {[...logs].reverse().map((log) => (
         <article className="rounded-md border border-line bg-slate-50 p-3 text-sm" key={log.turn}>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded bg-teal/10 px-2 py-0.5 text-xs font-semibold text-teal">Turn {log.turn}</span>
-            <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium">{log.selector}</span>
-            <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium">{log.dataSource}</span>
+            <span className="rounded bg-teal/10 px-2 py-0.5 text-xs font-semibold text-teal">
+              Turn {log.turn}
+            </span>
+            <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium">
+              {log.selector}
+            </span>
+            <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium">
+              {log.dataSource}
+            </span>
           </div>
           <p className="font-medium text-ink">Intent</p>
           <p className="mb-2 text-muted">{log.intent}</p>
@@ -300,7 +328,8 @@ function InspectorLog({ logs }: { logs: ComposeLogEntry[] }) {
           <ul className="mb-2 space-y-1 text-muted">
             {log.resolvedInsights.map((insight) => (
               <li key={`${insight.id}-${insight.breakdown}`}>
-                <span className="font-medium text-ink">{insight.name}</span> · {insight.breakdown} · {insight.chart}
+                <span className="font-medium text-ink">{insight.name}</span> · {insight.breakdown} ·{" "}
+                {insight.chart}
               </li>
             ))}
           </ul>
@@ -316,7 +345,9 @@ function InspectorLog({ logs }: { logs: ComposeLogEntry[] }) {
           </ul>
           <details>
             <summary className="cursor-pointer font-medium text-ink">Raw A2UI messages</summary>
-            <pre className="mt-2 overflow-x-auto rounded bg-white p-2 text-xs">{JSON.stringify(log.rawMessages, null, 2)}</pre>
+            <pre className="mt-2 overflow-x-auto rounded bg-white p-2 text-xs">
+              {JSON.stringify(log.rawMessages, null, 2)}
+            </pre>
           </details>
         </article>
       ))}

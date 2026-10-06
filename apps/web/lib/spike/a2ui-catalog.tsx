@@ -9,7 +9,7 @@ import {
   createBinderlessComponentImplementation,
   Divider,
   Row,
-  Text
+  Text,
 } from "@a2ui/react/v0_9";
 import type { FactRow } from "@/lib/api";
 import { RankingBarChart, TrendLineChart } from "@/components/ChartPanels";
@@ -17,7 +17,9 @@ import { formatValue } from "@/lib/format";
 import type { ChartPayload, MetricCardPayload } from "./types";
 import { uniIntelCatalogId } from "./constants";
 
-type BinderlessContext = Parameters<Parameters<typeof createBinderlessComponentImplementation>[1]>[0];
+type BinderlessContext = Parameters<
+  Parameters<typeof createBinderlessComponentImplementation>[1]
+>[0];
 
 function readBoundPayload<T>(context: BinderlessContext["context"], key: string): T | null {
   const binding = context.componentModel.properties[key] as { path: string } | undefined;
@@ -29,17 +31,23 @@ const MetricCard = createBinderlessComponentImplementation(
   {
     name: "MetricCard",
     schema: z.object({
-      dataPath: z.object({ path: z.string() })
-    })
+      dataPath: z.object({ path: z.string() }),
+    }),
   },
   ({ context }: BinderlessContext) => {
     const payload = readBoundPayload<MetricCardPayload>(context, "dataPath");
     if (!payload) {
-      return <div className="rounded-md border border-dashed border-line p-4 text-sm text-muted">No metric data</div>;
+      return (
+        <div className="rounded-md border border-dashed border-line p-4 text-sm text-muted">
+          No metric data
+        </div>
+      );
     }
     return (
       <div className="space-y-1 p-2">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted">{payload.title}</div>
+        <div className="text-xs font-medium uppercase tracking-wide text-muted">
+          {payload.title}
+        </div>
         <div className="text-2xl font-semibold text-ink">
           {payload.value === null ? "—" : formatValue(payload.value, payload.unit)}
         </div>
@@ -53,8 +61,8 @@ const TrendLine = createBinderlessComponentImplementation(
   {
     name: "TrendLine",
     schema: z.object({
-      dataPath: z.object({ path: z.string() })
-    })
+      dataPath: z.object({ path: z.string() }),
+    }),
   },
   ({ context }: BinderlessContext) => {
     const payload = readBoundPayload<ChartPayload>(context, "dataPath");
@@ -73,8 +81,8 @@ const RankingBar = createBinderlessComponentImplementation(
   {
     name: "RankingBar",
     schema: z.object({
-      dataPath: z.object({ path: z.string() })
-    })
+      dataPath: z.object({ path: z.string() }),
+    }),
   },
   ({ context }: BinderlessContext) => {
     const payload = readBoundPayload<ChartPayload>(context, "dataPath");
@@ -93,8 +101,8 @@ const BenchmarkBar = createBinderlessComponentImplementation(
   {
     name: "BenchmarkBar",
     schema: z.object({
-      dataPath: z.object({ path: z.string() })
-    })
+      dataPath: z.object({ path: z.string() }),
+    }),
   },
   ({ context }: BinderlessContext) => {
     const payload = readBoundPayload<ChartPayload>(context, "dataPath");
@@ -114,8 +122,8 @@ const ClarifyPanel = createBinderlessComponentImplementation(
     name: "ClarifyPanel",
     schema: z.object({
       dataPath: z.object({ path: z.string() }),
-      notesPath: z.object({ path: z.string() }).optional()
-    })
+      notesPath: z.object({ path: z.string() }).optional(),
+    }),
   },
   ({ context }: BinderlessContext) => {
     const clarify = readBoundPayload<{ question: string; options: string[] }>(context, "dataPath");
@@ -161,11 +169,15 @@ function normalizeFactRows(rows: Record<string, unknown>[]): FactRow[] {
     reporting_year: Number(row.reporting_year ?? 0),
     dimension_scope: String(row.dimension_scope ?? ""),
     value: Number(row.value ?? 0),
-    unit: String(row.unit ?? "")
+    unit: String(row.unit ?? ""),
   }));
 }
 
 const customComponents = [MetricCard, TrendLine, RankingBar, BenchmarkBar, ClarifyPanel];
 const layoutComponents = [Row, Column, Text, Card, Divider];
 
-export const uniIntelCatalog = new Catalog(uniIntelCatalogId, [...layoutComponents, ...customComponents], BASIC_FUNCTIONS);
+export const uniIntelCatalog = new Catalog(
+  uniIntelCatalogId,
+  [...layoutComponents, ...customComponents],
+  BASIC_FUNCTIONS
+);

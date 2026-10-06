@@ -1,9 +1,4 @@
-"""FastAPI routes for the Data Picture Studio.
-
-Kept as its own ``APIRouter`` and included from ``uni_intel.api.main`` with a
-single ``app.include_router(...)`` line, so this feature adds to the API
-surface without touching the existing, tested route handlers.
-"""
+"""Data Picture Studio routes, registered by the API application factory."""
 
 from __future__ import annotations
 

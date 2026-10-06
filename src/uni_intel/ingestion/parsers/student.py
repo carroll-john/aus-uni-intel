@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import xlrd
 from openpyxl import Workbook, load_workbook
+
+from uni_intel.ingestion.parsers._numeric import parse_optional_numeric
 
 
 class StudentParseError(ValueError):
@@ -180,7 +182,7 @@ class StudentSectionParser:
         return parsed
 
     def _parse_xls(self, path: Path | str) -> list[StudentRawRow]:
-        workbook = xlrd.open_workbook(path)
+        workbook = xlrd.open_workbook(str(path))
         sheet_name = find_xls_sheet_name(workbook, f"Table {self.sheet_name}")
 
         worksheet = workbook.sheet_by_name(sheet_name)
@@ -257,7 +259,7 @@ class StudentSectionParser:
     def _parse_metric_values(
         self,
         *,
-        row: tuple[object, ...] | list[object],
+        row: Sequence[object],
         row_number: int,
         state: object,
         provider: str,
@@ -413,7 +415,7 @@ class StudentCompletionsParser:
         return parsed
 
     def _parse_xls(self, path: Path | str) -> list[StudentRawRow]:
-        workbook = xlrd.open_workbook(path)
+        workbook = xlrd.open_workbook(str(path))
         rows = self._parse_total_time_series_xls(workbook) if self.parse_total_time_series else []
         if self.parse_level_metrics:
             rows.extend(self._parse_level_metrics_xls(workbook))
@@ -640,17 +642,11 @@ def resolve_metric_column_indexes(header: tuple[object, ...], metric: StudentMet
 
 
 def parse_numeric(value: object) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    text = str(value).strip().replace(",", "")
-    if text in {"", "np", "< 5", "n/a"}:
-        return None
-    try:
-        return float(text)
-    except ValueError as exc:
-        raise StudentParseError(f"Invalid numeric value: {value}") from exc
+    return parse_optional_numeric(
+        value,
+        {"", "np", "< 5", "n/a"},
+        lambda bad: StudentParseError(f"Invalid numeric value: {bad}"),
+    )
 
 
 def should_skip_provider_row(provider: str) -> bool:

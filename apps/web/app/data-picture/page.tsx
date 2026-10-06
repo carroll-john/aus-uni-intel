@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const DEFAULT_QUESTION = "Which universities lead in research income in 2024?";
 
 export default async function DataPictureStudioPage({
-  searchParams
+  searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
@@ -32,15 +32,17 @@ export default async function DataPictureStudioPage({
       <div>
         <h1 className="text-2xl font-semibold">Data Picture Studio</h1>
         <p className="mt-1 text-sm text-muted">
-          Type a strategic question in plain English and get back a composed, evidence-backed data story: a
-          headline insight, charts, evidence cards, caveats, and a full source trace.
+          Type a strategic question in plain English and get back a composed, evidence-backed data
+          story: a headline insight, charts, evidence cards, caveats, and a full source trace.
         </p>
       </div>
       <section className="panel p-4">
         <PromptBar defaultQuestion={question} examples={examples} />
       </section>
       {composeError ? (
-        <section className="panel border-coral/40 bg-coral/5 p-4 text-sm text-coral">{composeError}</section>
+        <section className="panel border-coral/40 bg-coral/5 p-4 text-sm text-coral">
+          {composeError}
+        </section>
       ) : picture ? (
         <DataPictureRenderer picture={picture} />
       ) : null}

@@ -5,18 +5,22 @@ import { formatValue } from "@/lib/format";
 export function MismatchMatrix({
   metricA,
   metricB,
-  rows
+  rows,
 }: {
   metricA: MetricRef;
   metricB: MetricRef;
   rows: MismatchRow[];
 }) {
   if (!rows.length) {
-    return <p className="text-sm text-muted">No universities have comparable data on both metrics yet.</p>;
+    return (
+      <p className="text-sm text-muted">
+        No universities have comparable data on both metrics yet.
+      </p>
+    );
   }
   return (
     <div className="overflow-x-auto rounded-md border border-line">
-      <table className="min-w-[640px] w-full border-collapse text-left text-sm">
+      <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <thead className="bg-cream/60 text-xs uppercase text-muted">
           <tr>
             <th className="px-3 py-2">Provider</th>

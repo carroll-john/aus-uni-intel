@@ -3,6 +3,7 @@ from pathlib import Path
 import duckdb
 from fastapi.testclient import TestClient
 
+from uni_intel.api import deps as api_deps
 from uni_intel.api import main as api_main
 from uni_intel.config import SCHEMA_PATH
 
@@ -13,7 +14,7 @@ HERDC_METRIC_ID = "herdc_research_income_total"
 
 def test_examples_endpoint_returns_three_canned_questions(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_datapicture_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr(api_deps, "DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/datapicture/examples")
@@ -26,7 +27,7 @@ def test_examples_endpoint_returns_three_canned_questions(tmp_path: Path, monkey
 
 def test_compose_trend_question_returns_trend_chart_with_sources(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_datapicture_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr(api_deps, "DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -46,7 +47,7 @@ def test_compose_trend_question_returns_trend_chart_with_sources(tmp_path: Path,
 
 def test_compose_ranking_question_returns_ranking_bar_chart(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_datapicture_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr(api_deps, "DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -67,7 +68,7 @@ def test_compose_ranking_question_returns_ranking_bar_chart(tmp_path: Path, monk
 
 def test_compose_mismatch_question_returns_mismatch_matrix_with_two_metrics(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_datapicture_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr(api_deps, "DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get(
@@ -88,7 +89,7 @@ def test_compose_mismatch_question_returns_mismatch_matrix_with_two_metrics(tmp_
 
 def test_compose_unresolvable_question_returns_clarification(tmp_path: Path, monkeypatch) -> None:
     db_path = _build_datapicture_db(tmp_path)
-    monkeypatch.setattr(api_main, "DB_PATH", db_path)
+    monkeypatch.setattr(api_deps, "DB_PATH", db_path)
 
     client = TestClient(api_main.app)
     response = client.get("/datapicture/compose", params={"q": "asdkfj qwoeiru zzzzz"})

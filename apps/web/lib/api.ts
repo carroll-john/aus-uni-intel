@@ -214,7 +214,11 @@ export type DataPictureBlock =
   | { type: "EvidenceCardGrid"; title: string; props: { cards: EvidenceCard[] } }
   | { type: "RankingBarChart"; title: string; props: { rows: FactRow[] } }
   | { type: "TrendChart"; title: string; props: { rows: FactRow[]; variant: "single" | "multi" } }
-  | { type: "MismatchMatrix"; title: string; props: { metric_a: MetricRef; metric_b: MetricRef; rows: MismatchRow[] } }
+  | {
+      type: "MismatchMatrix";
+      title: string;
+      props: { metric_a: MetricRef; metric_b: MetricRef; rows: MismatchRow[] };
+    }
   | { type: "EquityGapPanel"; title: string; props: { items: EquityGapItem[] } }
   | { type: "OutlierExplorer"; title: string; props: { rows: OutlierRow[] } }
   | { type: "MetricComparisonTable"; title: string; props: { rows: FactRow[] } }
@@ -222,7 +226,8 @@ export type DataPictureBlock =
   | { type: "SourceTraceDrawer"; title: string; props: { sources: SourceTraceItem[] } }
   | { type: "FollowUpPromptRail"; title: string; props: { prompts: string[] } };
 
-export type DataPictureIntent = "trend" | "ranking" | "mismatch" | "equity" | "outlier" | "quality" | "clarify";
+export type DataPictureIntent =
+  "trend" | "ranking" | "mismatch" | "equity" | "outlier" | "quality" | "clarify";
 
 export type DataPicture = {
   id: string;
@@ -244,7 +249,8 @@ export type DataPictureExample = {
   intent: DataPictureIntent;
 };
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
   status: number;
@@ -302,7 +308,12 @@ export function getRankings(
 
 export function getBenchmarks(
   metricId: string,
-  options: { year?: string; scope?: string; groupBy?: "mission_group" | "state"; missionGroup?: string } = {}
+  options: {
+    year?: string;
+    scope?: string;
+    groupBy?: "mission_group" | "state";
+    missionGroup?: string;
+  } = {}
 ) {
   const params = new URLSearchParams({ metric_id: metricId });
   if (options.year) params.set("year", options.year);
@@ -316,7 +327,12 @@ export function getProfile(providerId: string) {
   return getJson<{ provider: Provider; facts: FactRow[] }>(`/provider/${providerId}/profile`);
 }
 
-export function getMetricInsight(providerId: string, metricId: string, year?: string, scope?: string) {
+export function getMetricInsight(
+  providerId: string,
+  metricId: string,
+  year?: string,
+  scope?: string
+) {
   const params = new URLSearchParams({ metric_id: metricId });
   if (year) params.set("year", year);
   if (scope) params.set("scope", scope);
@@ -326,7 +342,7 @@ export function getMetricInsight(providerId: string, metricId: string, year?: st
 export function getCompare(providerIds: string[], metricIds: string[], year?: string) {
   const params = new URLSearchParams({
     provider_ids: providerIds.join(","),
-    metric_ids: metricIds.join(",")
+    metric_ids: metricIds.join(","),
   });
   if (year) params.set("year", year);
   return getJson<FactRow[]>(`/compare?${params.toString()}`);

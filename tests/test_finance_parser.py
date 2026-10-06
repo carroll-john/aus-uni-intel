@@ -13,7 +13,7 @@ def test_finance_parser_reads_headerless_csv(tmp_path: Path) -> None:
             [
                 "HAROLD:New_Uni_Financials,Total Institution,2024,2024Statements,"
                 'The University of Melbourne,"Royalties, Trademarks and Licenses",12345',
-                'HAROLD:New_Uni_Financials,HED,2024,2024Statements,'
+                "HAROLD:New_Uni_Financials,HED,2024,2024Statements,"
                 '"University of Technology, Sydney",Total Revenues,"1,234"',
             ]
         ),

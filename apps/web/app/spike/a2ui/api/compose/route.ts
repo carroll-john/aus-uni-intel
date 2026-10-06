@@ -11,7 +11,8 @@ export async function POST(request: Request) {
     const body = (await request.json()) as ComposeRequest;
     const messages = body.messages ?? [];
     const turn = messages.filter((message) => message.role === "user").length;
-    const latestIntent = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+    const latestIntent =
+      [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
 
     const { entries, source: catalogueSource } = await loadCatalogue();
     const catalogue = catalogueById(entries);
@@ -20,9 +21,13 @@ export async function POST(request: Request) {
     const resolved = resolveSelection(selection, catalogue);
 
     const surfaceId = body.surfaceId ?? DEFAULT_SURFACE_ID;
-    const { messages: a2uiMessages, compositionTree, dataSource } = await buildComposition(selection, catalogue, {
+    const {
+      messages: a2uiMessages,
+      compositionTree,
+      dataSource,
+    } = await buildComposition(selection, catalogue, {
       surfaceId,
-      isRefinement: body.isRefinement
+      isRefinement: body.isRefinement,
     });
 
     const response: ComposeResponse = {
@@ -38,8 +43,11 @@ export async function POST(request: Request) {
         clarify: selection.clarify,
         unavailableNotes: selection.unavailableNotes,
         rawMessages: a2uiMessages,
-        dataSource: dataSource === "mock_fallback" || catalogueSource === "mock_fallback" ? "mock_fallback" : "live_api"
-      }
+        dataSource:
+          dataSource === "mock_fallback" || catalogueSource === "mock_fallback"
+            ? "mock_fallback"
+            : "live_api",
+      },
     };
 
     return NextResponse.json(response);

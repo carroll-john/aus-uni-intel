@@ -2,8 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {
-    root: process.cwd()
-  }
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

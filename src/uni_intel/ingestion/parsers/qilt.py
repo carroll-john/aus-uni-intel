@@ -76,7 +76,9 @@ class QiltSesParser:
             metric_columns: list[tuple[int, str, str]] = []
             for index, header in enumerate(headers):
                 if header in QILT_COLUMNS:
-                    metric_columns.append((index, QILT_COLUMNS[header], str(header).replace(" *", "")))
+                    metric_columns.append(
+                        (index, QILT_COLUMNS[header], str(header).replace(" *", ""))  # type: ignore[index]
+                    )
 
             for row_number, row in enumerate(table_rows[header_row_index + 1 :], start=header_row_index + 2):
                 provider = row[provider_column] if len(row) > provider_column else None
@@ -157,19 +159,13 @@ def _national_names(names: list[str], suffix: str) -> list[str]:
 def _ods_tables(ods_bytes: bytes) -> dict[str, list[list[object | None]]]:
     with zipfile.ZipFile(BytesIO(ods_bytes)) as archive:
         root = ET.fromstring(archive.read("content.xml"))
-    return {
-        table.attrib.get(f"{TABLE}name", ""): _table_rows(table)
-        for table in root.findall(f".//{TABLE}table")
-    }
+    return {table.attrib.get(f"{TABLE}name", ""): _table_rows(table) for table in root.findall(f".//{TABLE}table")}
 
 
 def _xlsx_tables(xlsx_bytes: bytes) -> dict[str, list[list[object | None]]]:
     workbook = load_workbook(BytesIO(xlsx_bytes), read_only=True, data_only=True)
     return {
-        sheet_name: [
-            [cell for cell in row]
-            for row in workbook[sheet_name].iter_rows(values_only=True)
-        ]
+        sheet_name: [[cell for cell in row] for row in workbook[sheet_name].iter_rows(values_only=True)]
         for sheet_name in workbook.sheetnames
     }
 

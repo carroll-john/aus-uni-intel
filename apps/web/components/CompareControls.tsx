@@ -3,11 +3,20 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Calendar, Check, Search, X } from "lucide-react";
-import type { Metric, MetricCatalogItem, Provider } from "@/lib/api";
+import type { Provider } from "@/lib/api";
+import {
+  filterMetrics,
+  filterProviders,
+  metricGroup,
+  providerMeta,
+  rawMetricName,
+  toggleSelection,
+} from "@/components/compare-helpers";
+import type { SelectableMetric } from "@/components/compare-helpers";
+import { MAX_COMPARE_PROVIDERS } from "@/lib/constants";
+import { distinct } from "@/lib/search-params";
 
-export type SelectableMetric = (Metric | MetricCatalogItem) & {
-  metric_id: string;
-};
+export type { SelectableMetric };
 
 type CompareControlsProps = {
   metrics: SelectableMetric[];
@@ -19,7 +28,7 @@ type CompareControlsProps = {
   catalogMode: "curated" | "raw";
 };
 
-const maxProviders = 5;
+const maxProviders = MAX_COMPARE_PROVIDERS;
 
 export function CompareControls({
   metrics,
@@ -28,7 +37,7 @@ export function CompareControls({
   selectedMetricId,
   selectedProviderIds,
   selectedBenchmark,
-  year
+  year,
 }: CompareControlsProps) {
   const [providerQuery, setProviderQuery] = useState("");
   const [metricQuery, setMetricQuery] = useState("");
@@ -37,11 +46,17 @@ export function CompareControls({
   const [groupFilter, setGroupFilter] = useState("");
   const [stateFilter, setStateFilter] = useState("");
 
-  const missionGroups = useMemo(() => distinct(providers.map((provider) => provider.mission_group)), [providers]);
+  const missionGroups = useMemo(
+    () => distinct(providers.map((provider) => provider.mission_group)),
+    [providers]
+  );
   const states = useMemo(() => distinct(providers.map((provider) => provider.state)), [providers]);
 
   const selectedProviders = useMemo(
-    () => providerIds.map((id) => providers.find((provider) => provider.provider_id === id)).filter(Boolean) as Provider[],
+    () =>
+      providerIds
+        .map((id) => providers.find((provider) => provider.provider_id === id))
+        .filter(Boolean) as Provider[],
     [providerIds, providers]
   );
   const selectedMetric = useMemo(
@@ -82,8 +97,13 @@ export function CompareControls({
           title="Providers"
         >
           <SelectedChips
-            items={selectedProviders.map((provider) => ({ id: provider.provider_id, label: provider.provider_name }))}
-            onRemove={(id) => setProviderIds((current) => current.filter((providerId) => providerId !== id))}
+            items={selectedProviders.map((provider) => ({
+              id: provider.provider_id,
+              label: provider.provider_name,
+            }))}
+            onRemove={(id) =>
+              setProviderIds((current) => current.filter((providerId) => providerId !== id))
+            }
           />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <select
@@ -124,10 +144,14 @@ export function CompareControls({
           <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-line">
             {filteredProviders.map((provider) => (
               <SelectableRow
-                disabled={!providerIds.includes(provider.provider_id) && providerIds.length >= maxProviders}
+                disabled={
+                  !providerIds.includes(provider.provider_id) && providerIds.length >= maxProviders
+                }
                 key={provider.provider_id}
                 meta={providerMeta(provider)}
-                onToggle={() => setProviderIds((current) => toggleSelection(current, provider.provider_id))}
+                onToggle={() =>
+                  setProviderIds((current) => toggleSelection(current, provider.provider_id))
+                }
                 selected={providerIds.includes(provider.provider_id)}
                 title={provider.provider_name}
               />
@@ -143,7 +167,11 @@ export function CompareControls({
           title="Metric"
         >
           <SelectedChips
-            items={selectedMetric ? [{ id: selectedMetric.metric_id, label: selectedMetric.metric_name }] : []}
+            items={
+              selectedMetric
+                ? [{ id: selectedMetric.metric_id, label: selectedMetric.metric_name }]
+                : []
+            }
           />
           <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-line">
             <GroupedMetricRows
@@ -169,7 +197,10 @@ export function CompareControls({
               name="year"
             />
           </div>
-          <label className="mt-3 block text-xs font-medium uppercase text-muted" htmlFor="compare-benchmark">
+          <label
+            className="mt-3 block text-xs font-medium uppercase text-muted"
+            htmlFor="compare-benchmark"
+          >
             Benchmark group
           </label>
           <select
@@ -210,7 +241,7 @@ function SelectionPanel({
   onClear,
   onQueryChange,
   query,
-  title
+  title,
 }: {
   children: ReactNode;
   countLabel: string;
@@ -224,7 +255,9 @@ function SelectionPanel({
       <div className="flex items-center justify-between gap-3">
         <legend className="text-xs font-medium uppercase text-muted">{title}</legend>
         <div className="flex items-center gap-2">
-          <span className="rounded-md border border-line bg-cream/60 px-2 py-1 text-xs text-muted">{countLabel}</span>
+          <span className="rounded-md border border-line bg-cream/60 px-2 py-1 text-xs text-muted">
+            {countLabel}
+          </span>
           {onClear ? (
             <button
               aria-label={`Clear ${title.toLowerCase()}`}
@@ -251,14 +284,28 @@ function SelectionPanel({
   );
 }
 
-function SelectedChips({ items, onRemove }: { items: Array<{ id: string; label: string }>; onRemove?: (id: string) => void }) {
+function SelectedChips({
+  items,
+  onRemove,
+}: {
+  items: Array<{ id: string; label: string }>;
+  onRemove?: (id: string) => void;
+}) {
   return (
     <div className="mt-3 flex min-h-9 flex-wrap gap-2">
       {items.map((item) => (
-        <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-cream/60 px-2 py-1 text-xs" key={item.id}>
+        <span
+          className="inline-flex max-w-full items-center gap-1 rounded-md border border-line bg-cream/60 px-2 py-1 text-xs"
+          key={item.id}
+        >
           <span className="truncate">{item.label}</span>
           {onRemove ? (
-            <button aria-label={`Remove ${item.label}`} className="text-muted hover:text-ink" onClick={() => onRemove(item.id)} type="button">
+            <button
+              aria-label={`Remove ${item.label}`}
+              className="text-muted hover:text-ink"
+              onClick={() => onRemove(item.id)}
+              type="button"
+            >
               <X className="h-3 w-3" aria-hidden="true" />
             </button>
           ) : null}
@@ -273,7 +320,7 @@ function SelectableRow({
   meta,
   onToggle,
   selected,
-  title
+  title,
 }: {
   disabled: boolean;
   meta: string;
@@ -288,7 +335,9 @@ function SelectableRow({
       onClick={onToggle}
       type="button"
     >
-      <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected ? "border-teal bg-teal text-white" : "border-line bg-white"}`}>
+      <span
+        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected ? "border-teal bg-teal text-white" : "border-line bg-white"}`}
+      >
         {selected ? <Check className="h-3 w-3" aria-hidden="true" /> : null}
       </span>
       <span className="min-w-0">
@@ -306,7 +355,7 @@ function EmptyRow() {
 function GroupedMetricRows({
   metrics,
   onSelect,
-  selectedMetricId
+  selectedMetricId,
 }: {
   metrics: SelectableMetric[];
   onSelect: (metricId: string) => void;
@@ -338,73 +387,4 @@ function GroupedMetricRows({
   }
 
   return <>{rows}</>;
-}
-
-function toggleSelection(current: string[], id: string) {
-  if (current.includes(id)) return current.filter((item) => item !== id);
-  if (current.length >= maxProviders) return current;
-  return [...current, id];
-}
-
-function filterProviders(
-  providers: Provider[],
-  query: string,
-  selectedIds: string[],
-  groupFilter: string,
-  stateFilter: string
-) {
-  const normalizedQuery = normalize(query);
-  return providers
-    .filter((provider) => {
-      if (groupFilter && provider.mission_group !== groupFilter) return false;
-      if (stateFilter && provider.state !== stateFilter) return false;
-      if (!normalizedQuery) return true;
-      return normalize(`${provider.provider_name} ${provider.state ?? ""} ${provider.mission_group ?? ""}`).includes(normalizedQuery);
-    })
-    .sort((a, b) => bySelectedThenName(a.provider_id, b.provider_id, a.provider_name, b.provider_name, selectedIds));
-}
-
-function providerMeta(provider: Provider) {
-  return [provider.mission_group, provider.state].filter(Boolean).join(" · ") || "University";
-}
-
-function distinct(values: Array<string | null>) {
-  return Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
-}
-
-function filterMetrics(metrics: SelectableMetric[], query: string, selectedId: string) {
-  const normalizedQuery = normalize(query);
-  return metrics
-    .filter((metric) => {
-      if (!normalizedQuery) return true;
-      return normalize(`${metricGroup(metric)} ${metric.metric_name} ${rawMetricName(metric) ?? ""}`).includes(normalizedQuery);
-    })
-    .sort((a, b) => {
-      const aSelected = a.metric_id === selectedId;
-      const bSelected = b.metric_id === selectedId;
-      if (aSelected !== bSelected) return aSelected ? -1 : 1;
-      const groupCompare = metricGroup(a).localeCompare(metricGroup(b));
-      if (groupCompare !== 0) return groupCompare;
-      return a.metric_name.localeCompare(b.metric_name);
-    })
-    .slice(0, 40);
-}
-
-function metricGroup(metric: SelectableMetric) {
-  return "catalog_group" in metric ? metric.catalog_group : metric.metric_group;
-}
-
-function rawMetricName(metric: SelectableMetric) {
-  return "raw_metric_name" in metric ? metric.raw_metric_name : null;
-}
-
-function bySelectedThenName(aId: string, bId: string, aName: string, bName: string, selectedIds: string[]) {
-  const aSelected = selectedIds.includes(aId);
-  const bSelected = selectedIds.includes(bId);
-  if (aSelected !== bSelected) return aSelected ? -1 : 1;
-  return aName.localeCompare(bName);
-}
-
-function normalize(value: string) {
-  return value.trim().toLowerCase();
 }

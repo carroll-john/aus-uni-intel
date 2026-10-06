@@ -4,16 +4,18 @@ import { SafeExternalLink } from "@/components/SafeExternalLink";
 const STATUS_STYLES: Record<QualityCheck["status"], string> = {
   pass: "bg-teal/10 text-teal",
   warn: "bg-amber/10 text-amber",
-  fail: "bg-coral/10 text-coral"
+  fail: "bg-coral/10 text-coral",
 };
 
 export function DataQualityPanel({ checks }: { checks: QualityCheck[] }) {
   if (!checks.length) {
-    return <p className="text-sm text-muted">No data quality checks are recorded for this picture.</p>;
+    return (
+      <p className="text-sm text-muted">No data quality checks are recorded for this picture.</p>
+    );
   }
   return (
     <div className="overflow-x-auto rounded-md border border-line">
-      <table className="min-w-[560px] w-full border-collapse text-left text-sm">
+      <table className="w-full min-w-[560px] border-collapse text-left text-sm">
         <thead className="bg-cream/60 text-xs uppercase text-muted">
           <tr>
             <th className="px-3 py-2">Check</th>
@@ -26,7 +28,9 @@ export function DataQualityPanel({ checks }: { checks: QualityCheck[] }) {
             <tr className="border-t border-line" key={index}>
               <td className="px-3 py-2 font-medium">{check.check_name}</td>
               <td className="px-3 py-2">
-                <span className={`rounded-full px-2 py-1 text-xs font-semibold uppercase ${STATUS_STYLES[check.status]}`}>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-semibold uppercase ${STATUS_STYLES[check.status]}`}
+                >
                   {check.status}
                 </span>
               </td>
@@ -56,7 +60,10 @@ export function SourceTraceDrawer({ sources }: { sources: SourceTraceItem[] }) {
               {source.dataset_name ?? "Unknown dataset"} · {source.publication_date ?? "n/d"}
               {source.license ? ` · ${source.license}` : ""}
             </div>
-            <SafeExternalLink className="mt-0.5 inline-block text-xs text-teal hover:underline" href={source.source_url}>
+            <SafeExternalLink
+              className="mt-0.5 inline-block text-xs text-teal hover:underline"
+              href={source.source_url}
+            >
               View source
             </SafeExternalLink>
           </li>

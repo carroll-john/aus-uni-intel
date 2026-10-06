@@ -165,8 +165,86 @@ def upsert_metric_dependencies(
         )
 
 
+FACTS_INSERT_SQL = """
+    INSERT INTO facts (
+        fact_id, provider_id, metric_id, source_file_id, reporting_year,
+        period_start, period_end, dimension_scope, value, unit,
+        source_row_number, source_provider_name, source_line_item,
+        dimensions_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+
+def insert_facts(conn: duckdb.DuckDBPyConnection, fact_rows: list[tuple[object, ...]]) -> None:
+    """Bulk-insert canonical fact rows. Column order matches :data:`FACTS_INSERT_SQL`."""
+    if fact_rows:
+        conn.executemany(FACTS_INSERT_SQL, fact_rows)
+
+
+def standard_quality_checks(
+    rows_parsed: int,
+    staging_rows: int,
+    facts_loaded: int,
+    unmatched: list[str],
+    *,
+    parsed_detail: str,
+    facts_detail: str,
+    staging_detail: str = "Every parsed source row should be represented in staging.",
+    matched_detail: str = "All source provider names matched.",
+    extra: list[QualityCheck] | None = None,
+) -> list[QualityCheck]:
+    """Build the four quality checks every dataset runner shares.
+
+    Detail strings are parametrised so each dataset keeps its own wording. Pass
+    ``extra`` for dataset-specific checks (e.g. QILT confidence intervals).
+    """
+    checks = [
+        QualityCheck(
+            "source_rows_parsed",
+            "pass" if rows_parsed > 0 else "fail",
+            "info" if rows_parsed > 0 else "error",
+            str(rows_parsed),
+            "> 0",
+            parsed_detail,
+        ),
+        QualityCheck(
+            "staging_rows_loaded",
+            "pass" if rows_parsed == staging_rows else "fail",
+            "info" if rows_parsed == staging_rows else "error",
+            str(staging_rows),
+            str(rows_parsed),
+            staging_detail,
+        ),
+        QualityCheck(
+            "facts_loaded",
+            "pass" if facts_loaded > 0 else "fail",
+            "info" if facts_loaded > 0 else "error",
+            str(facts_loaded),
+            "> 0",
+            facts_detail,
+        ),
+        QualityCheck(
+            "unmatched_source_providers",
+            "warn" if unmatched else "pass",
+            "warning" if unmatched else "info",
+            str(len(unmatched)),
+            "0 public-university providers unmatched",
+            ", ".join(unmatched) if unmatched else matched_detail,
+        ),
+    ]
+    if extra:
+        checks.extend(extra)
+    return checks
+
+
+def _scalar_int(conn: duckdb.DuckDBPyConnection, query: str) -> int:
+    row = conn.execute(query).fetchone()
+    return int(row[0]) if row else 0
+
+
 def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityCheck]:
-    missing_metric_metadata = conn.execute(
+    missing_metric_metadata = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM metrics
@@ -177,18 +255,20 @@ def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityChec
            OR source_dataset IS NULL
            OR TRIM(source_dataset) = ''
            OR (is_calculated = TRUE AND calculation_method IS NULL)
-        """
-    ).fetchone()[0]
-    missing_fact_sources = conn.execute(
+        """,
+    )
+    missing_fact_sources = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM facts
         WHERE source_file_id IS NULL
            OR source_line_item IS NULL
            OR TRIM(source_line_item) = ''
-        """
-    ).fetchone()[0]
-    duplicate_facts = conn.execute(
+        """,
+    )
+    duplicate_facts = _scalar_int(
+        conn,
         """
         SELECT COUNT(*)
         FROM (
@@ -198,8 +278,8 @@ def metadata_quality_checks(conn: duckdb.DuckDBPyConnection) -> list[QualityChec
             GROUP BY 1, 2, 3, 4, 5, 6
             HAVING COUNT(*) > 1
         )
-        """
-    ).fetchone()[0]
+        """,
+    )
     return [
         QualityCheck(
             "metrics_have_sources_and_definitions",
@@ -237,9 +317,7 @@ def persist_quality_checks(
     rows = []
     source_key = source_file_id_value or "no-source-file"
     for check in checks:
-        check_id = hashlib.sha1(
-            f"{run_id}|{source_key}|{check.check_name}".encode("utf-8")
-        ).hexdigest()
+        check_id = hashlib.sha1(f"{run_id}|{source_key}|{check.check_name}".encode()).hexdigest()
         rows.append(
             (
                 check_id,
